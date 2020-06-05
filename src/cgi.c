@@ -66,7 +66,7 @@ add_http_headers_to_env(struct env_block *b, const char *s, int len)
             b->len += 5;
 
             /* Copy header name. Substitute '-' to '_' */
-            n = v - s;
+            n = (int)(v - s);
             for (i = 0; i < n; i++) {
                 ch = s[i] == '-' ? '_' : s[i];
                 b->buf[b->len++] = toupper(ch);
@@ -76,7 +76,7 @@ add_http_headers_to_env(struct env_block *b, const char *s, int len)
 
             /* Copy header value */
             v += 2;
-            n = p[-1] == '\r' ? (p - v) - 1 : p - v;
+            n = p[-1] == '\r' ? (int)((p - v) - 1): (int)(p - v);
             for (i = 0; i < n; i++)
                 b->buf[b->len++] = v[i];
 
@@ -161,8 +161,7 @@ prepare_environment(const struct conn *c, const char *prog,
         addenv(blk, "%.*s", len, s);
 
     /* Add all headers as HTTP_* variables */
-    add_http_headers_to_env(blk, c->headers,
-        c->rem.headers_len - (c->headers - c->request));
+    add_http_headers_to_env(blk, c->headers, (int)(c->rem.headers_len - (c->headers - c->request)));
 
     blk->vars[blk->nvars++] = NULL;
     blk->buf[blk->len++] = '\0';

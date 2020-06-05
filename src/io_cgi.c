@@ -16,7 +16,7 @@ write_cgi(struct stream *stream, const void *buf, size_t len)
     assert(stream->chan.sock != -1);
     assert(stream->flags & FLAG_W);
 
-    return (send(stream->chan.sock, buf, len, 0));
+    return (send(stream->chan.sock, buf, (int)len, 0));
 }
 
 static int
@@ -31,7 +31,7 @@ read_cgi(struct stream *stream, void *buf, size_t len)
 
     stream->flags &= ~FLAG_DONT_CLOSE;
 
-    n = recv(stream->chan.sock, buf, len, 0);
+    n = recv(stream->chan.sock, buf, (int)len, 0);
 
     if (stream->flags & FLAG_HEADERS_PARSED)
         return (n);

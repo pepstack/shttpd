@@ -97,7 +97,7 @@ call(struct ssi *ssi, const char *name,
     arg->in.buf = strchr(name, ' ');
     if (arg->in.buf != NULL) {
         *arg->in.buf++ = '\0';
-        arg->in.len = strlen(arg->in.buf);
+        arg->in.len = (int)strlen(arg->in.buf);
     }
 
     if ((ssi_func = find_ssi_func(ssi, name)) != NULL) {
@@ -124,7 +124,7 @@ pass(struct ssi_inc *inc, void *buf, int *n)
 {
     if (inc->cond == SSI_GO) {
         (void) memcpy(buf, inc->buf, inc->nbuf);
-        (*n) += inc->nbuf;
+        (*n) += (int)inc->nbuf;
     }
     inc->nbuf = 0;
     inc->state = SSI_PASS;
@@ -163,7 +163,7 @@ get_path(struct conn *conn, const char *src,
                 dst += len;
                 dst_len -= len;
             }
-            _shttpd_url_decode(src, p - src, dst, dst_len);
+            _shttpd_url_decode(src,(int)(p - src), dst, dst_len);
             return (1);
         }
 
@@ -182,15 +182,11 @@ do_include(struct ssi *ssi)
     if (inc->cond == SSI_STOP) {
         /* Do nothing - conditional FALSE */
     } else if (ssi->nest >= (int) NELEMS(ssi->incs) - 1) {
-        _shttpd_elog(E_LOG, ssi->conn,
-            "ssi: #include: maximum nested level reached");
-    } else if (!get_path(ssi->conn,
-        inc->buf + 13, inc->nbuf - 13, buf, sizeof(buf))) {
-        _shttpd_elog(E_LOG, ssi->conn, "ssi: bad #include: [%.*s]",
-            inc->nbuf, inc->buf);
+        _shttpd_elog(E_LOG, ssi->conn, "ssi: #include: maximum nested level reached");
+    } else if (!get_path(ssi->conn, inc->buf + 13, (int)(inc->nbuf - 13), buf, (int)sizeof(buf))) {
+        _shttpd_elog(E_LOG, ssi->conn, "ssi: bad #include: [%.*s]", inc->nbuf, inc->buf);
     } else if ((fp = fopen(buf, "r")) == NULL) {
-        _shttpd_elog(E_LOG, ssi->conn, 
-            "ssi: fopen(%s): %s", buf, strerror(errno));
+        _shttpd_elog(E_LOG, ssi->conn, "ssi: fopen(%s): %s", buf, strerror(errno));
     } else {
         ssi->nest++;
         ssi->incs[ssi->nest].fp = fp;
@@ -305,9 +301,8 @@ do_exec(struct ssi *ssi, char *buf, int len, int *n)
         /* Do nothing - conditional FALSE */
     } else if (*p != '"' || (e = strchr(p + 1, '"')) == NULL) {
         _shttpd_elog(E_LOG, ssi->conn, "ssi: bad exec(%s)", p);
-    } else if (!_shttpd_url_decode(p + 1, e - p - 1, cmd, sizeof(cmd))) {
-        _shttpd_elog(E_LOG, ssi->conn,
-            "ssi: cannot url_decode: exec(%s)", p);
+    } else if (!_shttpd_url_decode(p + 1, (int)(e - p - 1), cmd, (int)sizeof(cmd))) {
+        _shttpd_elog(E_LOG, ssi->conn, "ssi: cannot url_decode: exec(%s)", p);
     } else if ((inc->pipe = popen(cmd, "r")) == NULL) {
         _shttpd_elog(E_LOG, ssi->conn, "ssi: popen(%s)", cmd);
     } else {
@@ -320,14 +315,14 @@ static const struct ssi_cmd {
     struct vec  vec;
     void (*func)();
 } known_ssi_commands [] = {
-    {{"include ",   8}, do_include  },
-    {{"if ",    3}, do_if   },
-    {{"elif ",  5}, do_elif },
-    {{"else",   4}, do_else },
-    {{"endif",  5}, do_endif    },
-    {{"call ",  5}, do_call },
-    {{"exec ",  5}, do_exec },
-    {{NULL,     0}, NULL    }
+    {{"include ", 8}, do_include },
+    {{"if ",      3}, do_if      },
+    {{"elif ",    5}, do_elif    },
+    {{"else",     4}, do_else    },
+    {{"endif",    5}, do_endif   },
+    {{"call ",    5}, do_call    },
+    {{"exec ",    5}, do_exec    },
+    {{NULL,       0}, NULL       }
 };
 
 static void
@@ -363,10 +358,11 @@ read_ssi(struct stream *stream, void *vbuf, size_t len)
 
 again:
 
-    if (inc->state == SSI_CALL)
-        do_call2(ssi, buf, len, &n);
-    else if (inc->state == SSI_EXEC)
-        do_exec2(ssi, buf, len, &n);
+    if (inc->state == SSI_CALL) {
+        do_call2(ssi, buf, (int)len, &n);
+    } else if (inc->state == SSI_EXEC) {
+        do_exec2(ssi, buf, (int)len, &n);
+    }
 
     while (n + inc->nbuf < len && (ch = fgetc(inc->fp)) != EOF)
     

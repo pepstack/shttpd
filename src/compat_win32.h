@@ -43,7 +43,9 @@
 #define DIRSEP          '\\'
 #define IS_DIRSEP_CHAR(c)   ((c) == '/' || (c) == '\\')
 #define O_NONBLOCK      0
-#define EWOULDBLOCK     WSAEWOULDBLOCK
+
+#define EWOULDBLOCK_WIN     WSAEWOULDBLOCK
+
 #define snprintf        _snprintf
 #define vsnprintf       _vsnprintf
 #define mkdir(x,y)      _mkdir(x)

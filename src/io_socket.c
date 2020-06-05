@@ -14,14 +14,14 @@ static int
 read_socket(struct stream *stream, void *buf, size_t len)
 {
     assert(stream->chan.sock != -1);
-    return (recv(stream->chan.sock, buf, len, 0));
+    return (recv(stream->chan.sock, buf, (int)len, 0));
 }
 
 static int
 write_socket(struct stream *stream, const void *buf, size_t len)
 {
     assert(stream->chan.sock != -1);
-    return (send(stream->chan.sock, buf, len, 0));
+    return (send(stream->chan.sock, buf, (int)len, 0));
 }
 
 static void

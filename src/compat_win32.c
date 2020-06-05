@@ -326,15 +326,15 @@ stdoutput(void *arg)
     size_t          max_recv;
 
     max_recv = min(sizeof(buf), tp->content_len - total);
-    while (!stop &&
-        max_recv > 0 &&
-        is_socket_ready(tp->s, IS_READY_FOR_READ) &&
-        (n = recv(tp->s, buf, max_recv, 0)) > 0) {
-        if (n == -1 && ERRNO == EWOULDBLOCK)
+    while (!stop && max_recv > 0 && is_socket_ready((int)tp->s, IS_READY_FOR_READ) && (n = recv(tp->s, buf, (int)max_recv, 0)) > 0) {
+        if (n == -1 && ERRNO == WSAEWOULDBLOCK) {
             continue;
-        for (sent = 0; !stop && sent < n; sent += k)
-            if (!WriteFile(tp->hPipe, buf + sent, n - sent, &k, 0))
+        }
+        for (sent = 0; !stop && sent < n; sent += k) {
+            if (!WriteFile(tp->hPipe, buf + sent, n - sent, &k, 0)) {
                 stop++;
+            }
+        }
         total += n;
         max_recv = min(sizeof(buf), tp->content_len - total);
     }
@@ -358,9 +358,9 @@ stdinput(void *arg)
     while (!stop && ReadFile(tp->hPipe, buf, sizeof(buf), &n, NULL)) {
         ntotal += n;
         for (sent = 0; !stop && sent < n; sent += k) {
-            if (is_socket_ready(tp->s, IS_READY_FOR_WRITE) &&
+            if (is_socket_ready((int)tp->s, IS_READY_FOR_WRITE) &&
                 (k = send(tp->s, buf + sent, n - sent, 0)) <= 0) {
-                if (k == -1 && ERRNO == EWOULDBLOCK) {
+                if (k == -1 && ERRNO == WSAEWOULDBLOCK) {
                     k = 0;
                     continue;
                 }
@@ -394,7 +394,6 @@ spawn_stdio_thread(int sock, HANDLE hPipe, void (*func)(void *),
         big_int_t content_len)
 {
     struct threadparam  *tp;
-    DWORD           tid;
 
     tp = malloc(sizeof(*tp));
     assert(tp != NULL);
@@ -564,8 +563,9 @@ _shttpd_set_systray(struct shttpd_ctx *ctx, const char *opt)
     char        title[512];
     static WNDPROC  oldproc;
 
-    if (!_shttpd_is_true(opt))
+    if (!_shttpd_is_true(opt)) {
         return (TRUE);
+    }
 
     FreeConsole();
     GetConsoleTitle(title, sizeof(title));
@@ -580,15 +580,12 @@ int
 _shttpd_set_nt_service(struct shttpd_ctx *ctx, const char *action)
 {
     SC_HANDLE   hSCM, hService;
-    char        path[FILENAME_MAX], key[128];
-    HKEY        hKey;
-    DWORD       dwData;
-
+    char        path[FILENAME_MAX];
 
     if (!strcmp(action, "install")) {
-        if ((hSCM = OpenSCManager(NULL, NULL,
-            SC_MANAGER_ALL_ACCESS)) == NULL)
+        if ((hSCM = OpenSCManager(NULL, NULL, SC_MANAGER_ALL_ACCESS)) == NULL) {
             _shttpd_elog(E_FATAL, NULL, "Error opening SCM (%d)", ERRNO);
+        }
 
         GetModuleFileName(NULL, path, sizeof(path));
 
@@ -597,27 +594,21 @@ _shttpd_set_nt_service(struct shttpd_ctx *ctx, const char *action)
             SERVICE_AUTO_START, SERVICE_ERROR_NORMAL, path,
             NULL, NULL, NULL, NULL, NULL);
 
-        if (!hService)
-            _shttpd_elog(E_FATAL, NULL,
-                "Error installing service (%d)", ERRNO);
+        if (!hService) {
+            _shttpd_elog(E_FATAL, NULL, "Error installing service (%d)", ERRNO);
+        }
 
-        ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION,
-            &service_descr);
+        ChangeServiceConfig2(hService, SERVICE_CONFIG_DESCRIPTION, &service_descr);
+
         _shttpd_elog(E_FATAL, NULL, "Service successfully installed");
-
-
     } else if (!strcmp(action, "uninstall")) {
-
         if ((hSCM = OpenSCManager(NULL, NULL,
             SC_MANAGER_ALL_ACCESS)) == NULL) {
             _shttpd_elog(E_FATAL, NULL, "Error opening SCM (%d)", ERRNO);
-        } else if ((hService = OpenService(hSCM,
-            SERVICE_NAME, DELETE)) == NULL) {
-            _shttpd_elog(E_FATAL, NULL,
-                "Error opening service (%d)", ERRNO);
+        } else if ((hService = OpenService(hSCM, SERVICE_NAME, DELETE)) == NULL) {
+            _shttpd_elog(E_FATAL, NULL, "Error opening service (%d)", ERRNO);
         } else if (!DeleteService(hService)) {
-            _shttpd_elog(E_FATAL, NULL,
-                "Error deleting service (%d)", ERRNO);
+            _shttpd_elog(E_FATAL, NULL, "Error deleting service (%d)", ERRNO);
         } else {
             _shttpd_elog(E_FATAL, NULL, "Service deleted");
         }
@@ -656,17 +647,22 @@ ServiceMain(int argc, char *argv[])
 
     GetModuleFileName(NULL, path, sizeof(path));
 
-    if ((p = strrchr(path, DIRSEP)) != NULL)
+    if ((p = strrchr(path, DIRSEP)) != NULL) {
         *++p = '\0';
+    }
 
     strcat(path, CONFIG_FILE);  /* woo ! */
 
     ctx = shttpd_init(NELEMS(av) - 1, av);
-    if ((ctx = shttpd_init(NELEMS(av) - 1, av)) == NULL)
-        _shttpd_elog(E_FATAL, NULL, "Cannot initialize SHTTP context");
 
-    while (ss.dwCurrentState == SERVICE_RUNNING)
+    if ((ctx = shttpd_init(NELEMS(av) - 1, av)) == NULL) {
+        _shttpd_elog(E_FATAL, NULL, "Cannot initialize SHTTP context");
+    }
+
+    while (ss.dwCurrentState == SERVICE_RUNNING) {
         shttpd_poll(ctx, INT_MAX);
+    }
+
     shttpd_fini(ctx);
 
     ss.dwCurrentState  = SERVICE_STOPPED; 
@@ -682,6 +678,7 @@ try_to_run_as_nt_service(void)
         {NULL, NULL}
     };
 
-    if (StartServiceCtrlDispatcher(service_table))
+    if (StartServiceCtrlDispatcher(service_table)) {
         exit(EXIT_SUCCESS);
+    }
 }

@@ -59,3 +59,11 @@ example is an embeded http server in C.
 or:
 
     $ example -ports 8080
+
+## Build on Windows with vs2015
+
+    Visual Studio 2015 Open:
+    
+    ./shttpd/msvc/libshttpd/libshttpd.sln
+
+    Build All.

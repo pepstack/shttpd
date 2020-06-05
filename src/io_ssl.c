@@ -51,11 +51,13 @@ read_ssl(struct stream *stream, void *buf, size_t len)
 
     assert(stream->chan.ssl.ssl != NULL);
 
-    if (!(stream->flags & FLAG_SSL_ACCEPTED))
+    if (!(stream->flags & FLAG_SSL_ACCEPTED)) {
         _shttpd_ssl_handshake(stream);
+    }
 
-    if (stream->flags & FLAG_SSL_ACCEPTED)
-        nread = SSL_read(stream->chan.ssl.ssl, buf, len);
+    if (stream->flags & FLAG_SSL_ACCEPTED) {
+        nread = SSL_read(stream->chan.ssl.ssl, buf, (int) len);
+    }
 
     return (nread);
 }
@@ -64,7 +66,7 @@ static int
 write_ssl(struct stream *stream, const void *buf, size_t len)
 {
     assert(stream->chan.ssl.ssl != NULL);
-    return (SSL_write(stream->chan.ssl.ssl, buf, len));
+    return (SSL_write(stream->chan.ssl.ssl, buf, (int) len));
 }
 
 static void

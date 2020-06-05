@@ -280,7 +280,7 @@ enum {CTL_PASS_SOCKET, CTL_WAKEUP};
  * "s" and "len" parameters.
  */
 #define FOR_EACH_WORD_IN_LIST(s,len)                    \
-    for (; s != NULL && (len = strcspn(s, DELIM_CHARS)) != 0;   \
+    for (; s != NULL && (len = (int)strcspn(s, DELIM_CHARS)) != 0;   \
             s += len, s+= strspn(s, DELIM_CHARS))
 
 /*

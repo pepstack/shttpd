@@ -141,14 +141,15 @@ is_alias(struct shttpd_ctx *ctx, const char *uri,
 
     FOR_EACH_WORD_IN_LIST(s, len) {
 
-        if ((p = memchr(s, '=', len)) == NULL || p >= s + len || p == s)
+        if ((p = memchr(s, '=', len)) == NULL || p >= s + len || p == s) {
             continue;
+        }
 
         if (memcmp(uri, s, p - s) == 0) {
             a_uri->ptr = s;
-            a_uri->len = p - s;
+            a_uri->len = (int)(p - s);
             a_path->ptr = ++p;
-            a_path->len = (s + len) - p;
+            a_path->len = (int)((s + len) - p);
             return (s);
         }
     }
@@ -190,7 +191,7 @@ shttpd_open_listening_port(int port)
     sa.u.sin.sin_port       = htons((uint16_t) port);
     sa.u.sin.sin_addr.s_addr    = htonl(INADDR_ANY);
 
-    if ((sock = socket(PF_INET, SOCK_STREAM, 6)) == -1)
+    if ((sock = (int)socket(PF_INET, SOCK_STREAM, 6)) == -1)
         goto fail;
     if (_shttpd_set_non_blocking_mode(sock) != 0)
         goto fail;
@@ -229,10 +230,10 @@ _shttpd_get_headers_len(const char *buf, size_t buflen)
             *s != '\n' && * (unsigned char *) s < 128)
             len = -1;
         else if (s[0] == '\n' && s[1] == '\n')
-            len = s - buf + 2;
+            len = (int)(s - buf + 2);
         else if (s[0] == '\n' && &s[1] < e &&
             s[1] == '\r' && s[2] == '\n')
-            len = s - buf + 3;
+            len = (int)(s - buf + 3);
 
     return (len);
 }
@@ -283,11 +284,13 @@ montoi(const char *s)
         "Jan", "Feb", "Mar", "Apr", "May", "Jun",
         "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
     };
-    size_t  i;
 
-    for (i = 0; i < sizeof(ar) / sizeof(ar[0]); i++)
-        if (!strcmp(s, ar[i]))
+    int  i;
+    for (i = 0; i < (int)(sizeof(ar) / sizeof(ar[0])); i++) {
+        if (!strcmp(s, ar[i])) {
             return (i);
+        }
+    }
 
     return (-1);
 }
@@ -381,9 +384,11 @@ _shttpd_parse_headers(const char *s, int len, struct headers *parsed)
             /* Fetch header value into the connection structure */
             if (h->type == HDR_STRING) {
                 v->v_vec.ptr = s;
-                v->v_vec.len = p - s;
-                if (p[-1] == '\r' && v->v_vec.len > 0)
+                v->v_vec.len = (int)(p - s);
+
+                if (p[-1] == '\r' && v->v_vec.len > 0) {
                     v->v_vec.len--;
+                }
             } else if (h->type == HDR_INT) {
                 v->v_big_int = strtoul(s, NULL, 10);
             } else if (h->type == HDR_DATE) {
@@ -447,13 +452,15 @@ _shttpd_get_mime_type(struct shttpd_ctx *ctx,
 
     /* Firt, loop through the custom mime types if any */
     FOR_EACH_WORD_IN_LIST(p, n) {
-        if ((eq = memchr(p, '=', n)) == NULL || eq >= p + n || eq == p)
+        if ((eq = memchr(p, '=', n)) == NULL || eq >= p + n || eq == p) {
             continue;
-        ext_len = eq - p;
-        if (len > ext_len && uri[len - ext_len - 1] == '.' &&
-            !_shttpd_strncasecmp(p, &uri[len - ext_len], ext_len)) {
+        }
+
+        ext_len = (int)(eq - p);
+
+        if (len > ext_len && uri[len - ext_len - 1] == '.' && !_shttpd_strncasecmp(p, &uri[len - ext_len], ext_len)) {
             vec->ptr = eq + 1;
-            vec->len = p + n - vec->ptr;
+            vec->len = (int)(p + n - vec->ptr);
             return;
         }
     }
@@ -461,18 +468,16 @@ _shttpd_get_mime_type(struct shttpd_ctx *ctx,
     /* If no luck, try built-in mime types */
     for (i = 0; builtin_mime_types[i].extension != NULL; i++) {
         ext_len = builtin_mime_types[i].ext_len;
-        if (len > ext_len && uri[len - ext_len - 1] == '.' &&
-            !_shttpd_strncasecmp(builtin_mime_types[i].extension,
-                &uri[len - ext_len], ext_len)) {
+        if (len > ext_len && uri[len - ext_len - 1] == '.' && !_shttpd_strncasecmp(builtin_mime_types[i].extension, &uri[len - ext_len], ext_len)) {
             vec->ptr = builtin_mime_types[i].mime_type;
-            vec->len = strlen(vec->ptr);
+            vec->len = (int)strlen(vec->ptr);
             return;
         }
     }
 
     /* Oops. This extension is unknown to us. Fallback to text/plain */
     vec->ptr = "text/plain";
-    vec->len = strlen(vec->ptr);
+    vec->len = (int)strlen(vec->ptr);
 }
 
 /*
@@ -491,7 +496,7 @@ find_index_file(struct conn *c, char *path, size_t maxpath, struct stat *stp)
         _shttpd_snprintf(buf, sizeof(buf), "%s%.*s", path, len, s);
         if (_shttpd_stat(buf, stp) == 0) {
             _shttpd_strlcpy(path, buf, maxpath);
-            _shttpd_get_mime_type(c->ctx, s, len, &c->mime_type);
+            _shttpd_get_mime_type(c->ctx, s, (int)len, &c->mime_type);
             return (0);
         }
     }
@@ -507,16 +512,17 @@ find_index_file(struct conn *c, char *path, size_t maxpath, struct stat *stp)
 static int
 get_path_info(struct conn *c, char *path, struct stat *stp)
 {
-    char    *p, *e;
+    char *p, *e;
 
-    if (_shttpd_stat(path, stp) == 0)
+    if (_shttpd_stat(path, stp) == 0) {
         return (0);
+    }
 
     p = path + strlen(path);
     e = path + strlen(c->ctx->options[OPT_ROOT]) + 2;
     
     /* Strip directory parts of the path one by one */
-    for (; p > e; p--)
+    for (; p > e; p--) {
         if (*p == '/') {
             *p = '\0';
             if (!_shttpd_stat(path, stp) && !S_ISDIR(stp->st_mode)) {
@@ -526,6 +532,7 @@ get_path_info(struct conn *c, char *path, struct stat *stp)
                 *p = '/';
             }
         }
+    }
 
     return (-1);
 }
@@ -544,7 +551,7 @@ decide_what_to_do(struct conn *c)
     if ((c->query = strchr(c->uri, '?')) != NULL)
         *c->query++ = '\0';
 
-    _shttpd_url_decode(c->uri, strlen(c->uri), c->uri, strlen(c->uri) + 1);
+    _shttpd_url_decode(c->uri, (int)strlen(c->uri), c->uri, (int)strlen(c->uri) + 1);
     remove_double_dots(c->uri);
     
     root = c->ctx->options[OPT_ROOT];
@@ -665,7 +672,7 @@ set_request_method(struct conn *c)
     /* Set the request method */
     for (v = _shttpd_known_http_methods; v->ptr != NULL; v++)
         if (!memcmp(c->rem.io.buf, v->ptr, v->len)) {
-            c->method = v - _shttpd_known_http_methods;
+            c->method = (int)(v - _shttpd_known_http_methods);
             break;
         }
 
@@ -723,19 +730,21 @@ parse_http_request(struct conn *c)
         p++;
 
     /* Now remember where URI starts, and shift to the end of URI */
-    for (start = p; p < e && !isspace((unsigned char)*p); ) p++;
-    uri_len = p - start;
+    for (start = p; p < e && !isspace((unsigned char)*p); ) {
+        p++;
+    }
+
+    uri_len = (int)(p - start);
 
     /* Skip space following the URI */
-    while (p < e && *p == ' ')
+    while (p < e && *p == ' ') {
         p++;
+    }
 
     /* Now comes the HTTP-Version in the form HTTP/<major>.<minor> */
-    if (sscanf(p, "HTTP/%lu.%lu%n",
-        &c->major_version, &c->minor_version, &n) != 2 || p[n] != '\0') {
+    if (sscanf(p, "HTTP/%lu.%lu%n", &c->major_version, &c->minor_version, &n) != 2 || p[n] != '\0') {
         _shttpd_send_server_error(c, 400, "Bad HTTP version");
-    } else if (c->major_version > 1 ||
-        (c->major_version == 1 && c->minor_version > 1)) {
+    } else if (c->major_version > 1 || (c->major_version == 1 && c->minor_version > 1)) {
         _shttpd_send_server_error(c, 505, "HTTP version not supported");
     } else if (uri_len <= 0) {
         _shttpd_send_server_error(c, 400, "Bad URI");
@@ -743,8 +752,7 @@ parse_http_request(struct conn *c)
         _shttpd_send_server_error(c, 500, "Cannot allocate URI");
     } else {
         _shttpd_strlcpy(c->uri, (char *) start, uri_len + 1);
-        _shttpd_parse_headers(c->headers,
-            (c->request + req_len) - c->headers, &c->ch);
+        _shttpd_parse_headers(c->headers,(int)((c->request + req_len) - c->headers), &c->ch);
 
         /* Remove the length of request from total, count only data */
         assert(c->rem.io.total >= (big_int_t) req_len);
@@ -904,24 +912,26 @@ read_stream(struct stream *stream)
 {
     int n, len;
 
-    len = io_space_len(&stream->io);
+    len = (int)io_space_len(&stream->io);
     assert(len > 0);
 
     /* Do not read more that needed */
-    if (stream->content_len > 0 &&
-        stream->io.total + len > stream->content_len)
-        len = stream->content_len - stream->io.total;
+    if (stream->content_len > 0 && stream->io.total + len > stream->content_len) {
+        len = (int)(stream->content_len - stream->io.total);
+    }
 
     /* Read from underlying channel */
     assert(stream->io_class != NULL);
     n = stream->io_class->read(stream, io_space(&stream->io), len);
 
-    if (n > 0)
+    if (n > 0) {
         io_inc_head(&stream->io, n);
-    else if (n == -1 && (ERRNO == EINTR || ERRNO == EWOULDBLOCK))
-        n = n;  /* Ignore EINTR and EAGAIN */
-    else if (!(stream->flags & FLAG_DONT_CLOSE))
+    } else if (n == -1 && (ERRNO == EINTR || ERRNO == EWOULDBLOCK)) {
+        /* Ignore EINTR and EAGAIN */
+        n = n;
+    } else if (!(stream->flags & FLAG_DONT_CLOSE)) {
         _shttpd_stop_stream(stream);
+    }
 
     DBG(("read_stream (%d %s): read %d/%d/%lu bytes (errno %d)",
         stream->conn->rem.chan.sock,
@@ -936,8 +946,10 @@ read_stream(struct stream *stream)
      */
     if (stream->content_len > 0 && stream == &stream->conn->loc) {
         assert(stream->io.total <= stream->content_len);
-        if (stream->io.total == stream->content_len)
+
+        if (stream->io.total == stream->content_len) {
             _shttpd_stop_stream(stream);
+        }
     }
 
     stream->conn->expire_time = _shttpd_current_time + EXPIRE_TIME;
@@ -948,22 +960,26 @@ write_stream(struct stream *from, struct stream *to)
 {
     int n, len;
 
-    len = io_data_len(&from->io);
+    len = (int) io_data_len(&from->io);
     assert(len > 0);
 
     /* TODO: should be assert on CAN_WRITE flag */
     n = to->io_class->write(to, io_data(&from->io), len);
+
     to->conn->expire_time = _shttpd_current_time + EXPIRE_TIME;
+
     DBG(("write_stream (%d %s): written %d/%d bytes (errno %d)",
         to->conn->rem.chan.sock,
         to->io_class ? to->io_class->name : "(null)", n, len, ERRNO));
 
-    if (n > 0)
+    if (n > 0) {
         io_inc_tail(&from->io, n);
-    else if (n == -1 && (ERRNO == EINTR || ERRNO == EWOULDBLOCK))
-        n = n;  /* Ignore EINTR and EAGAIN */
-    else if (!(to->flags & FLAG_DONT_CLOSE))
+    } else if (n == -1 && (ERRNO == EINTR || ERRNO == EWOULDBLOCK)) {
+        /* Ignore EINTR and EAGAIN */
+        n = n;
+    } else if (!(to->flags & FLAG_DONT_CLOSE)) {
         _shttpd_stop_stream(to);
+    }
 }
 
 
@@ -1300,7 +1316,7 @@ shttpd_poll(struct shttpd_ctx *ctx, int milliseconds)
             continue;
         do {
             sa.len = sizeof(sa.u.sin);
-            if ((sock = accept(l->sock, &sa.u.sa, &sa.len)) != -1)
+            if ((sock = (int)accept(l->sock, &sa.u.sa, &sa.len)) != -1)
                 handle_connected_socket(ctx,&sa,sock,l->is_ssl);
         } while (sock != -1);
     }
@@ -1355,23 +1371,25 @@ shttpd_socketpair(int sp[2])
     sa.sin_port     = htons(0);
     sa.sin_addr.s_addr  = htonl(INADDR_LOOPBACK);
 
-    if ((sock = socket(AF_INET, SOCK_STREAM, 0)) != -1 &&
+    if ((sock = (int)socket(AF_INET, SOCK_STREAM, 0)) != -1 &&
         !bind(sock, (struct sockaddr *) &sa, len) &&
         !listen(sock, 1) &&
         !getsockname(sock, (struct sockaddr *) &sa, &len) &&
-        (sp[0] = socket(AF_INET, SOCK_STREAM, 6)) != -1 &&
+        (sp[0] = (int)socket(AF_INET, SOCK_STREAM, 6)) != -1 &&
         !connect(sp[0], (struct sockaddr *) &sa, len) &&
-        (sp[1] = accept(sock,(struct sockaddr *) &sa, &len)) != -1) {
+        (sp[1] = (int)accept(sock,(struct sockaddr *) &sa, &len)) != -1) {
 
         /* Success */
         ret = 0;
     } else {
-
         /* Failure, close descriptors */
-        if (sp[0] != -1)
+        if (sp[0] != -1) {
             (void) closesocket(sp[0]);
-        if (sp[1] != -1)
+        }
+
+        if (sp[1] != -1) {
             (void) closesocket(sp[1]);
+        }
     }
 
     (void) closesocket(sock);
@@ -1405,7 +1423,7 @@ set_inetd(struct shttpd_ctx *ctx, const char *flag)
 static int
 set_uid(struct shttpd_ctx *ctx, const char *uid)
 {
-    struct passwd   *pw;
+    struct passwd *pw = NULL;
 
     ctx = NULL; /* Unused */
 

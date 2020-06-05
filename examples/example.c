@@ -6,8 +6,9 @@
  */
 
 #ifdef _WIN32
-#include <winsock.h>
-#define snprintf            _snprintf
+#define NO_SSL
+
+#include <winsock2.h>
 
 #ifndef _WIN32_WCE
 #ifdef _MSC_VER /* pragmas not valid on MinGW */
@@ -43,7 +44,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "shttpd.h"
+#include "../src/shttpd.h"
 
 /*
  * This callback function is attached to the "/" and "/abc.html" URIs,
@@ -72,8 +73,7 @@ show_index(struct shttpd_arg *arg)
         (void) shttpd_get_var("name1", arg->in.buf, arg->in.len,
             value, sizeof(value));
     } else if (query_string != NULL) {
-        (void) shttpd_get_var("name1", query_string,
-            strlen(query_string), value, sizeof(value));
+        (void) shttpd_get_var("name1", query_string, (int)strlen(query_string), value, sizeof(value));
     }
     if (value[0] != '\0') {
         *p = atoi(value);

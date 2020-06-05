@@ -69,8 +69,9 @@ _shttpd_snprintf(char *buf, size_t buflen, const char *fmt, ...)
     n = vsnprintf(buf, buflen, fmt, ap);
     va_end(ap);
 
-    if (n < 0 || (size_t) n >= buflen)
-        n = buflen - 1;
+    if (n < 0 || (size_t) n >= buflen) {
+        n = (int)(buflen - 1);
+    }
     buf[n] = '\0';
 
     return (n);

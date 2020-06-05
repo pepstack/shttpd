@@ -22,23 +22,27 @@ call_user(struct conn *c, struct shttpd_arg *arg, shttpd_callback_t func)
     arg->priv       = c;
     arg->state      = c->loc.chan.emb.state;
     arg->out.buf        = io_space(&c->loc.io);
-    arg->out.len        = io_space_len(&c->loc.io);
+    arg->out.len        = (int)io_space_len(&c->loc.io);
     arg->out.num_bytes  = 0;
     arg->in.buf     = io_data(&c->rem.io);;
-    arg->in.len     = io_data_len(&c->rem.io);
+    arg->in.len     = (int)io_data_len(&c->rem.io);
     arg->in.num_bytes   = 0;
 
-    if (io_data_len(&c->rem.io) >= c->rem.io.size)
+    if (io_data_len(&c->rem.io) >= c->rem.io.size) {
         arg->flags |= SHTTPD_POST_BUFFER_FULL;
+    }
 
-    if (c->rem.content_len > 0 && c->rem.io.total < c->rem.content_len)
+    if (c->rem.content_len > 0 && c->rem.io.total < c->rem.content_len) {
         arg->flags |= SHTTPD_MORE_POST_DATA;
+    }
 
     func(arg);
 
     io_inc_head(&c->loc.io, arg->out.num_bytes);
     io_inc_tail(&c->rem.io, arg->in.num_bytes);
-    c->loc.chan.emb.state = arg->state;     /* Save state */
+
+    /* Save state */
+    c->loc.chan.emb.state = arg->state;
 
     /*
      * If callback finished output, that means it did all cleanup.
@@ -204,7 +208,7 @@ shttpd_get_var(const char *var, const char *buf, int buf_len,
                 s = e;
 
             /* URL-decode value. Return result length */
-            return (_shttpd_url_decode(p, s - p, value, value_len));
+            return (_shttpd_url_decode(p, (int)(s - p), value, value_len));
         }
 
     return (-1);

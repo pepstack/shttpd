@@ -18,7 +18,7 @@ write_file(struct stream *stream, const void *buf, size_t len)
     int     n, fd = stream->chan.fd;
 
     assert(fd != -1);
-    n = write(fd, buf, len);
+    n = write(fd, buf, (int)len);
 
     DBG(("put_file(%p, %d): %d bytes", (void *) stream, (int) len, n));
 
@@ -79,7 +79,7 @@ read_file(struct stream *stream, void *buf, size_t len)
 #endif /* USE_SENDFILE */
 
     assert(stream->chan.fd != -1);
-    return (read(stream->chan.fd, buf, len));
+    return  (read(stream->chan.fd, buf, (unsigned int) len));
 }
 
 static void
@@ -98,29 +98,25 @@ _shttpd_get_file(struct conn *c, struct stat *stp)
     const char  *fmt = "%a, %d %b %Y %H:%M:%S GMT", *msg = "OK";
     big_int_t   cl; /* Content-Length */
 
-    if (c->mime_type.len == 0)
-        _shttpd_get_mime_type(c->ctx, c->uri,
-            strlen(c->uri), &c->mime_type); 
+    if (c->mime_type.len == 0) {
+        _shttpd_get_mime_type(c->ctx, c->uri, (int)strlen(c->uri), &c->mime_type);
+    }
+
     cl = (big_int_t) stp->st_size;
 
     /* If Range: header specified, act accordingly */
-    if (c->ch.range.v_vec.len > 0 &&
-        (n = sscanf(c->ch.range.v_vec.ptr,"bytes=%lu-%lu",&r1, &r2)) > 0) {
+    if (c->ch.range.v_vec.len > 0 && (n = sscanf(c->ch.range.v_vec.ptr,"bytes=%lu-%lu",&r1, &r2)) > 0) {
         status = 206;
         (void) lseek(c->loc.chan.fd, r1, SEEK_SET);
         cl = n == 2 ? r2 - r1 + 1: cl - r1;
-        (void) _shttpd_snprintf(range, sizeof(range),
-            "Content-Range: bytes %lu-%lu/%lu\r\n",
-            r1, r1 + cl - 1, (unsigned long) stp->st_size);
+        (void) _shttpd_snprintf(range, sizeof(range), "Content-Range: bytes %lu-%lu/%lu\r\n", r1, r1 + cl - 1, (unsigned long) stp->st_size);
         msg = "Partial Content";
     }
 
     /* Prepare Etag, Date, Last-Modified headers */
-    (void) strftime(date, sizeof(date),
-        fmt, localtime(&_shttpd_current_time));
+    (void) strftime(date, sizeof(date), fmt, localtime(&_shttpd_current_time));
     (void) strftime(lm, sizeof(lm), fmt, localtime(&stp->st_mtime));
-    (void) _shttpd_snprintf(etag, sizeof(etag), "%lx.%lx",
-        (unsigned long) stp->st_mtime, (unsigned long) stp->st_size);
+    (void) _shttpd_snprintf(etag, sizeof(etag), "%lx.%lx", (unsigned long) stp->st_mtime, (unsigned long) stp->st_size);
 
     /*
      * We do not do io_inc_head here, because it will increase 'total'
@@ -140,13 +136,14 @@ _shttpd_get_file(struct conn *c, struct stat *stp)
         status, msg, date, lm, etag,
         c->mime_type.len, c->mime_type.ptr, cl, range);
 
-    c->status = status;
+    c->status = (int)status;
     c->loc.content_len = cl;
     c->loc.io_class = &_shttpd_io_file;
     c->loc.flags |= FLAG_R | FLAG_ALWAYS_READY;
 
-    if (c->method == METHOD_HEAD)
+    if (c->method == METHOD_HEAD) {
         _shttpd_stop_stream(&c->loc);
+    }
 }
 
 const struct io_class   _shttpd_io_file =  {

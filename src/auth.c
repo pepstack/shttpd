@@ -133,10 +133,11 @@ parse_authorization_header(const struct vec *h, struct digest *dig)
         }
 
         v->ptr = (char *) s;
-        v->len = p - s;
+        v->len = (int)(p - s);
 
-        if (*p == '"')
+        if (*p == '"') {
             p++;
+        }
 
         DBG(("auth field [%.*s]", v->len, v->ptr));
     }
@@ -293,23 +294,25 @@ _shttpd_check_authorization(struct conn *c, const char *path)
             continue;
 
         if (!memcmp(c->uri, s, p - s)) {
-            
-            n = s + len - p;
-            if (n > (int) sizeof(protected_path) - 1)
+            n = (int)(s + len - p);
+
+            if (n > (int) sizeof(protected_path) - 1) {
                 n = sizeof(protected_path) - 1;
+            }
 
             _shttpd_strlcpy(protected_path, p + 1, n);
 
-            if ((fp = fopen(protected_path, "r")) == NULL)
-                _shttpd_elog(E_LOG, c,
-                    "check_auth: cannot open %s: %s",
-                    protected_path, strerror(errno));
+            if ((fp = fopen(protected_path, "r")) == NULL) {
+                _shttpd_elog(E_LOG, c, "check_auth: cannot open %s: %s", protected_path, strerror(errno));
+            }
+
             break;
         }
     }
 
-    if (fp == NULL)
+    if (fp == NULL) {
         fp = open_auth_file(c->ctx, path);
+    }
 
     if (fp != NULL) {
         authorized = authorize(c, fp);
@@ -373,23 +376,27 @@ _shttpd_edit_passwords(const char *fname, const char *domain,
             "Cannot open %s: %s", tmp, strerror(errno));
 
     p.ptr = pass;
-    p.len = strlen(pass);
+    p.len = (int)strlen(pass);
 
     /* Copy the stuff to temporary file */
     while (fgets(line, sizeof(line), fp) != NULL) {
         u.ptr = line;
-        if ((d.ptr = strchr(line, ':')) == NULL)
-            continue;
-        u.len = d.ptr - u.ptr;
-        d.ptr++;
-        if (strchr(d.ptr, ':') == NULL)
-            continue;
-        d.len = strchr(d.ptr, ':') - d.ptr;
 
-        if ((int) strlen(user) == u.len &&
-            !memcmp(user, u.ptr, u.len) &&
-            (int) strlen(domain) == d.len &&
-            !memcmp(domain, d.ptr, d.len)) {
+        if ((d.ptr = strchr(line, ':')) == NULL) {
+            continue;
+        }
+
+        u.len = (int)(d.ptr - u.ptr);
+        d.ptr++;
+
+        if (strchr(d.ptr, ':') == NULL) {
+            continue;
+        }
+
+        d.len = (int)(strchr(d.ptr, ':') - d.ptr);
+
+        if ((int) strlen(user) == u.len && !memcmp(user, u.ptr, u.len) &&
+            (int) strlen(domain) == d.len && !memcmp(domain, d.ptr, d.len)) {
             found++;
             md5(ha1, &u, &d, &p, NULL);
             (void) fprintf(fp2, "%s:%s:%.32s\n", user, domain, ha1);
@@ -400,8 +407,8 @@ _shttpd_edit_passwords(const char *fname, const char *domain,
 
     /* If new user, just add it */
     if (found == 0) {
-        u.ptr = user; u.len = strlen(user);
-        d.ptr = domain; d.len = strlen(domain);
+        u.ptr = user; u.len = (int)strlen(user);
+        d.ptr = domain; d.len = (int)strlen(domain);
         md5(ha1, &u, &d, &p, NULL);
         (void) fprintf(fp2, "%s:%s:%.32s\n", user, domain, ha1);
     }
