@@ -3,14 +3,14 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libshttpd", "libshttpd.vcxproj", "{96655051-E3CE-4223-8D41-937B3FD72D98}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libshttpd", "libshttpd\libshttpd.vcxproj", "{96655051-E3CE-4223-8D41-937B3FD72D98}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "..\example\example.vcxproj", "{2935E695-7D0A-4D4E-B8C8-D0B28F76A3D7}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "example", "example\example.vcxproj", "{2935E695-7D0A-4D4E-B8C8-D0B28F76A3D7}"
 	ProjectSection(ProjectDependencies) = postProject
 		{96655051-E3CE-4223-8D41-937B3FD72D98} = {96655051-E3CE-4223-8D41-937B3FD72D98}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shttpd", "..\shttpd\shttpd.vcxproj", "{772AC7E7-4D72-4BB7-89E6-3538D4C6C2C5}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "shttpd", "shttpd\shttpd.vcxproj", "{772AC7E7-4D72-4BB7-89E6-3538D4C6C2C5}"
 	ProjectSection(ProjectDependencies) = postProject
 		{96655051-E3CE-4223-8D41-937B3FD72D98} = {96655051-E3CE-4223-8D41-937B3FD72D98}
 	EndProjectSection

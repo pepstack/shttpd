@@ -64,6 +64,6 @@ or:
 
     Visual Studio 2015 Open:
     
-    ./shttpd/msvc/libshttpd/libshttpd.sln
+    ./shttpd/msvc/shttpd.sln
 
     Build All.
