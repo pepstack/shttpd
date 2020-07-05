@@ -8,13 +8,17 @@ PREFIX=.
 # Default build config for Linux
 LIBS?=   -ldl -lpthread
 
-SRCS=		string.c shttpd.c log.c auth.c md5.c cgi.c io_ssi.c \
+SRCS= string.c shttpd.c log.c auth.c md5.c cgi.c io_ssi.c \
 		io_file.c io_socket.c io_ssl.c io_emb.c io_dir.c io_cgi.c
-HDRS=		defs.h llist.h shttpd.h std_includes.h io.h md5.h ssl.h \
+
+HDRS= defs.h llist.h shttpd.h std_includes.h io.h md5.h ssl.h \
 		compat_unix.h compat_win32.h compat_rtems.h config.h
+
 OBJS=		$(SRCS:%.c=%.o) compat_unix.c
 PROG=		shttpd
-CL_FLAGS=	/MD /TC /nologo /DNDEBUG /Os 	# MSVC compiler flags
+
+# MSVC compiler flags
+CL_FLAGS=	/MD /TC /nologo /DNDEBUG /Os
 
 # default build config for Linux
 #LIBS?=   -ldl -lpthread
@@ -73,7 +77,7 @@ $(PROG).lib: $(SRCS) $(HDRS) compat_win32.c
 	cl /c $(CL_FLAGS) compat_win32.c $(SRCS)
 	lib /nologo *.obj /out:$@
 
-msvc:	$(PROG).lib
+msvc: $(PROG).lib
 	cl $(CL_FLAGS) standalone.c /link /out:$(PROG).exe \
 	ws2_32.lib user32.lib advapi32.lib shell32.lib $(PROG).lib
 

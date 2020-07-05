@@ -30,7 +30,7 @@ mkdir -p $bindir/bin/{win64,win86}
 
 mkdir -p $bindir/include/shttpd
 
-mkdir -p $bindir/lib/{cygw64,linux64,mingw64,win64,win86}
+mkdir -p $bindir/lib/{win64,win86}
 
 libtarget=$_cdir/msvc/libshttpd/target
 binexample=$_cdir/msvc/example/target
@@ -54,5 +54,5 @@ cp $binshttpd/Win32/Release/shttpd.exe $bindir/bin/win86/
 echo "[4] update libshttpd include: $_cdir/src => $bindir/include"
 cp $_cdir/src/shttpd.h $bindir/include/shttpd/
 
-echo "success update all: $bindir"
+echo "Update all files success: $bindir"
 

@@ -22,6 +22,8 @@ set -o nounset
 set -o errexit
 
 ################################################################
+echo "[1] clean msvc build files"
+
 bindir=$_cdir/libshttpd
 
 rm -rf "$bindir"
@@ -38,4 +40,10 @@ find "$_cdir/msvc/libshttpd/" -maxdepth 1 -not -name 'libshttpd' -and -not -name
 
 find "$_cdir/msvc/shttpd/" -maxdepth 1 -not -name 'shttpd' -and -not -name 'shttpd.vcxproj*' | xargs rm -rf
 
-echo "success clean all files."
+echo "[1] clean linux make files"
+cd $_cdir/src && make clean
+
+echo "[2] clean examples make files"
+cd $_cdir/examples && make clean
+
+echo "Clean all files success."
