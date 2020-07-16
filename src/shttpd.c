@@ -1793,9 +1793,9 @@ static const struct opt * find_opt(const char *opt_name)
 }
 
 
-int shttpd_set_option(struct shttpd_ctx *ctx, const char *opt, const char *val)
+int shttpd_set_option(struct shttpd_ctx *ctx, const char *opt_name, const char *val)
 {
-    const struct opt    *o = find_opt(opt);
+    const struct opt *o = find_opt(opt_name);
     int         retval = TRUE;
 
     /* Call option setter first, so it can use both new and old values */
