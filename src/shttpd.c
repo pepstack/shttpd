@@ -1730,47 +1730,196 @@ static int set_workers(struct shttpd_ctx *ctx, const char *value)
 /* shttpd [options] */
 static const struct opt {
     int          index;              /* Index in shttpd_ctx */
-    const char  *name;               /* Option name in config file */
-    const char  *description;        /* Description */
-    const char  *default_value;      /* Default option value */
-    int        (*setter)(struct shttpd_ctx *, const char *);
+    const char * name;               /* Option name in config file */
+    const char * description;        /* Description */
+    const char * default_value;      /* Default option value */
+    int (*setter)(struct shttpd_ctx *, const char *);
 } known_options[] = {
-    {OPT_ROOT,              "root",         "\tWeb root directory", ".", NULL},
-    {OPT_INDEX_FILES,       "index_files",  "Index files", INDEX_FILES, NULL},
+    {
+        OPT_ROOT,
+        "root",
+        "Web root directory",
+        ".",
+        NULL
+    },
+    {
+        OPT_INDEX_FILES,
+        "index_files",
+        "Index files",
+        INDEX_FILES,
+        NULL
+    },
 #ifndef NO_SSL
-    {OPT_SSL_CERTIFICATE,   "ssl_cert",     "SSL certificate file", NULL,set_ssl},
+    {
+        OPT_SSL_CERTIFICATE,
+        "ssl_cert",
+        "SSL certificate file",
+        NULL,
+        set_ssl
+    },
 #endif /* NO_SSL */
-    {OPT_PORTS,             "ports",        "Listening ports", LISTENING_PORTS, set_ports},
-    {OPT_DIR_LIST,          "dir_list",     "Directory listing", "yes", NULL},
-    {OPT_CFG_URI,           "cfg_uri",      "Config uri", NULL, set_cfg_uri},
-    {OPT_PROTECT,           "protect",      "URI to htpasswd mapping", NULL, NULL},
+    {
+        OPT_PORTS,
+        "ports",
+        "Listening ports",
+        LISTENING_PORTS,
+        set_ports
+    },
+    {
+        OPT_DIR_LIST,
+        "dir_list",
+        "Directory listing",
+        "yes",
+        NULL
+    },
+    {
+        OPT_CFG_URI,
+        "cfg_uri",
+        "Config uri",
+        NULL,
+        set_cfg_uri
+    },
+    {
+        OPT_PROTECT,
+        "protect",
+        "URI to htpasswd mapping",
+        NULL,
+        NULL
+    },
 #ifndef NO_CGI
-    {OPT_CGI_EXTENSIONS,    "cgi_ext",      "CGI extensions", CGI_EXT, NULL},
-    {OPT_CGI_INTERPRETER,   "cgi_interp",   "CGI interpreter", NULL, NULL},
-    {OPT_CGI_ENVIRONMENT,   "cgi_env",      "Additional CGI env vars", NULL, NULL},
+    {
+        OPT_CGI_EXTENSIONS,
+        "cgi_ext",
+        "CGI extensions",
+        CGI_EXT,
+        NULL
+    },
+    {
+        OPT_CGI_INTERPRETER,
+        "cgi_interp",
+        "CGI interpreter",
+        NULL,
+        NULL
+    },
+    {
+        OPT_CGI_ENVIRONMENT,
+        "cgi_env",
+        "Additional CGI env vars",
+        NULL,
+        NULL
+    },
 #endif /* NO_CGI */
-    {OPT_SSI_EXTENSIONS,    "ssi_ext",      "SSI extensions", SSI_EXT, NULL},
+    {
+        OPT_SSI_EXTENSIONS,
+        "ssi_ext",
+        "SSI extensions",
+        SSI_EXT,
+        NULL
+    },
 #ifndef NO_AUTH
-    {OPT_AUTH_REALM,        "auth_realm",   "Authentication domain name",REALM,NULL},
-    {OPT_AUTH_GPASSWD,      "auth_gpass",   "Global passwords file", NULL, NULL},
-    {OPT_AUTH_PUT,          "auth_PUT",     "PUT,DELETE auth file", NULL, NULL},
+    {
+        OPT_AUTH_REALM,
+        "auth_realm",
+        "Authentication domain name",
+        REALM,
+        NULL
+    },
+    {
+        OPT_AUTH_GPASSWD,
+        "auth_gpass",
+        "Global passwords file",
+        NULL,
+        NULL
+    },
+    {
+        OPT_AUTH_PUT,
+        "auth_PUT",
+        "PUT,DELETE auth file",
+        NULL,
+        NULL
+    },
 #endif /* !NO_AUTH */
 #ifdef _WIN32
-    {OPT_SERVICE,           "service",      "Manage WinNNT service (install|uninstall)", NULL, _shttpd_set_nt_service},
-    {OPT_HIDE,              "systray",      "Hide console, show icon on systray", "no", _shttpd_set_systray},
+    {
+        OPT_SERVICE,
+        "service",
+        "Manage WinNNT service (install|uninstall)",
+        NULL,
+        _shttpd_set_nt_service
+    },
+    {
+        OPT_HIDE,
+        "systray",
+        "Hide console, show icon on systray",
+        "no",
+        _shttpd_set_systray
+    },
 #else
-    {OPT_INETD,             "inetd",        "Inetd mode", "no", set_inetd},
-    {OPT_UID,               "uid",          "\tRun as user", NULL, set_uid},
+    {
+        OPT_INETD,
+        "inetd",
+        "Inetd mode",
+        "no",
+        set_inetd
+    },
+    {
+        OPT_UID,
+        "uid",
+        "Run as user",
+        NULL,
+        set_uid
+    },
 #endif /* _WIN32 */
-    {OPT_ACCESS_LOG,        "access_log",   "Access log file", NULL, set_alog},
-    {OPT_ERROR_LOG,         "error_log",    "Error log file", NULL, set_elog},
-    {OPT_MIME_TYPES,        "mime_types",   "Additional mime types list", NULL,NULL},
-    {OPT_ALIASES,           "aliases",      "Path=URI mappings", NULL, NULL},
-    {OPT_ACL,               "acl",          "\tAllow/deny IP addresses/subnets", NULL, set_acl},
+    {
+        OPT_ACCESS_LOG,
+        "access_log",
+        "Access log file",
+        NULL,
+        set_alog
+    },
+    {
+        OPT_ERROR_LOG,
+        "error_log",
+        "Error log file",
+        NULL,
+        set_elog},
+    {
+        OPT_MIME_TYPES,
+        "mime_types",
+        "Additional mime types list",
+        NULL,
+        NULL
+    },
+    {
+        OPT_ALIASES,
+        "aliases",
+        "Path=URI mappings",
+        NULL,
+        NULL
+    },
+    {
+        OPT_ACL,
+        "acl",
+        "Allow/deny IP addresses/subnets",
+        NULL,
+        set_acl
+    },
 #if !defined(NO_THREADS)
-    {OPT_THREADS,           "threads",      "Number of worker threads", "1", set_workers},
+    {
+        OPT_THREADS,
+        "threads",
+        "Number of worker threads",
+        "1",
+        set_workers
+    },
 #endif /* !NO_THREADS */
-    {-1, NULL, NULL, NULL, NULL}
+    {
+        -1,
+        NULL,
+        NULL,
+        NULL,
+        NULL
+    }
 };
 
 
