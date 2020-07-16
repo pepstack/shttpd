@@ -97,6 +97,14 @@ static void listener_destructor(struct llhead *lp)
 }
 
 
+static void error_handler_destructor(struct llhead *lp)
+{
+    struct error_handler *e = LL_ENTRY(lp, struct error_handler, link);
+
+    free(e);
+}
+
+
 static void registered_uri_destructor(struct llhead *lp)
 {
     struct registered_uri *ruri = LL_ENTRY(lp, struct registered_uri, link);
@@ -1396,6 +1404,8 @@ void shttpd_fini(struct shttpd_ctx *ctx)
     free_list(&ctx->registered_uris, registered_uri_destructor);
     free_list(&ctx->acl, acl_destructor);
     free_list(&ctx->listeners, listener_destructor);
+
+    free_list(&ctx->error_handlers, error_handler_destructor);
 
 #if !defined(NO_SSI)
     free_list(&ctx->ssi_funcs, _shttpd_ssi_func_destructor);
