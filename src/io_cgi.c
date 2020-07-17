@@ -7,11 +7,9 @@
  * can do whatever you want with this stuff. If we meet some day, and you think
  * this stuff is worth it, you can buy me a beer in return.
  */
-
 #include "defs.h"
 
-static int
-write_cgi(struct stream *stream, const void *buf, size_t len)
+static int write_cgi(struct stream *stream, const void *buf, size_t len)
 {
     assert(stream->chan.sock != -1);
     assert(stream->flags & FLAG_W);
@@ -19,8 +17,8 @@ write_cgi(struct stream *stream, const void *buf, size_t len)
     return (send(stream->chan.sock, buf, (int)len, 0));
 }
 
-static int
-read_cgi(struct stream *stream, void *buf, size_t len)
+
+static int read_cgi(struct stream *stream, void *buf, size_t len)
 {
     struct headers  parsed;
     char        status[4];
@@ -33,12 +31,12 @@ read_cgi(struct stream *stream, void *buf, size_t len)
 
     n = recv(stream->chan.sock, buf, (int)len, 0);
 
-    if (stream->flags & FLAG_HEADERS_PARSED)
+    if (stream->flags & FLAG_HEADERS_PARSED) {
         return (n);
+    }
 
     if (n <= 0 && ERRNO != EWOULDBLOCK) {
-        _shttpd_send_server_error(stream->conn, 500,
-            "Error running CGI");
+        _shttpd_send_server_error(stream->conn, 500, "Error running CGI");
         return (n);
     }
 
@@ -50,20 +48,20 @@ read_cgi(struct stream *stream, void *buf, size_t len)
      * Reply line was alredy appended to the IO buffer in
      * decide_what_to_do(), with blank status code.
      */
-
     stream->flags |= FLAG_DONT_CLOSE;
+
     io_inc_head(&stream->io, n);
 
-    stream->headers_len = _shttpd_get_headers_len(stream->io.buf,
-        stream->io.head);
+    stream->headers_len = _shttpd_get_headers_len(stream->io.buf, stream->io.head);
+
     if (stream->headers_len < 0) {
         stream->flags &= ~FLAG_DONT_CLOSE;
-        _shttpd_send_server_error(stream->conn, 500,
-            "Bad headers sent");
-        _shttpd_elog(E_LOG, stream->conn,
-            "CGI script sent invalid headers: "
-            "[%.*s]", stream->io.head - CGI_REPLY_LEN,
-            stream->io.buf + CGI_REPLY_LEN);
+
+        _shttpd_send_server_error(stream->conn, 500, "Bad headers sent");
+
+        _shttpd_elog(E_LOG, stream->conn, "CGI script sent invalid headers: [%.*s]",
+            stream->io.head - CGI_REPLY_LEN, stream->io.buf + CGI_REPLY_LEN);
+
         return (0);
     }
 
@@ -85,22 +83,24 @@ read_cgi(struct stream *stream, void *buf, size_t len)
     stream->conn->status = (int) parsed.status.v_big_int;
 
     /* If script outputs 'Location:' header, set status code to 302 */
-    if (parsed.location.v_vec.len > 0)
+    if (parsed.location.v_vec.len > 0) {
         stream->conn->status = 302;
+    }
 
     /*
      * If script did not output neither 'Location:' nor 'Status' headers,
      * set the default status code 200, which means 'success'.
      */
-    if (stream->conn->status == 0)
+    if (stream->conn->status == 0) {
         stream->conn->status = 200;
+    }
 
     /* Append the status line to the beginning of the output */
-    (void) _shttpd_snprintf(status,
-        sizeof(status), "%3d", stream->conn->status);
+    (void) _shttpd_snprintf(status, sizeof(status), "%3d", stream->conn->status);
+
     (void) memcpy(stream->io.buf + 9, status, 3);
-    DBG(("read_cgi: content len %lu status %s",
-        stream->content_len, status));
+
+    DBG(("read_cgi: content len %lu status %s", stream->content_len, status));
 
     /* Next time, pass output directly back to the client */
     assert((big_int_t) stream->headers_len <= stream->io.total);
@@ -112,14 +112,15 @@ read_cgi(struct stream *stream, void *buf, size_t len)
     return (0);
 }
 
-static void
-close_cgi(struct stream *stream)
+
+static void close_cgi(struct stream *stream)
 {
     assert(stream->chan.sock != -1);
     (void) closesocket(stream->chan.sock);
 }
 
-const struct io_class   _shttpd_io_cgi =  {
+
+const struct io_class _shttpd_io_cgi = {
     "cgi",
     read_cgi,
     write_cgi,

@@ -53,7 +53,7 @@ enum { SSI_GO, SSI_STOP };
 static const struct vec st = {"<!--#", 5};
 
 
-void shttpd_register_ssi_func(struct shttpd_ctx_t *ctx, const char *name, shttpd_callback_t func, void *user_data)
+void shttpd_register_ssi_func(shttpd_ctx ctx, const char *name, shttpd_callback_t func, void *user_data)
 {
     struct ssi_func *e;
 

@@ -89,7 +89,7 @@ union variant
  * For non-embedded compilation shttpd_callback_t is not defined, so
  * we use union variant to keep the compiler silent.
  */
-struct registered_uri_t
+struct registered_uri
 {
     struct llhead   link;
     const char     *uri;
@@ -388,7 +388,7 @@ extern void _shttpd_get_dir(struct conn *c);
 extern void _shttpd_get_file(struct conn *c, struct stat *stp);
 extern void _shttpd_ssl_handshake(struct stream *stream);
 extern void _shttpd_setup_embedded_stream(struct conn *, union variant, void *);
-extern struct registered_uri_t *_shttpd_is_registered_uri(struct shttpd_ctx_t *, const char *uri);
+extern struct registered_uri *_shttpd_is_registered_uri(struct shttpd_ctx_t *, const char *uri);
 extern void _shttpd_do_ssi(struct conn *);
 extern void _shttpd_ssi_func_destructor(struct llhead *lp);
 

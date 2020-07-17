@@ -15,8 +15,7 @@
  * for given path. Return 0 if the path itself is a directory,
  * or -1 on error, 1 if OK.
  */
-int
-_shttpd_put_dir(const char *path)
+int _shttpd_put_dir(const char *path)
 {
     char        buf[FILENAME_MAX];
     const char  *s, *p;
@@ -42,8 +41,8 @@ _shttpd_put_dir(const char *path)
     return (1);
 }
 
-static int
-read_dir(struct stream *stream, void *buf, size_t len)
+
+static int read_dir(struct stream *stream, void *buf, size_t len)
 {
     static const char footer[] = "</table></body></html>\n";
 
@@ -112,8 +111,8 @@ read_dir(struct stream *stream, void *buf, size_t len)
     return (nwritten);
 }
 
-static void
-close_dir(struct stream *stream)
+
+static void close_dir(struct stream *stream)
 {
     assert(stream->chan.dir.dirp != NULL);
     assert(stream->chan.dir.path != NULL);
@@ -121,8 +120,8 @@ close_dir(struct stream *stream)
     free(stream->chan.dir.path);
 }
 
-void
-_shttpd_get_dir(struct conn *c)
+
+void _shttpd_get_dir(struct conn *c)
 {
     if ((c->loc.chan.dir.dirp = opendir(c->loc.chan.dir.path)) == NULL) {
         (void) free(c->loc.chan.dir.path);
@@ -145,7 +144,8 @@ _shttpd_get_dir(struct conn *c)
     }
 }
 
-const struct io_class   _shttpd_io_dir =  {
+
+const struct io_class _shttpd_io_dir = {
     "dir",
     read_dir,
     NULL,

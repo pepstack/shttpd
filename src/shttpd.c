@@ -109,7 +109,7 @@ static void error_handler_destructor(struct llhead *lp)
 
 static void registered_uri_destructor(struct llhead *lp)
 {
-    struct registered_uri_t *ruri = LL_ENTRY(lp, struct registered_uri_t, link);
+    struct registered_uri *ruri = LL_ENTRY(lp, struct registered_uri, link);
 
     free((void *) ruri->uri);
     free(ruri);
@@ -558,7 +558,11 @@ static int get_path_info(struct conn *c, char *path, struct stat *stp)
 {
     char *p, *e;
 
-    if (_shttpd_stat(path, stp) == 0) {
+    int rc = _shttpd_stat(path, stp);
+
+    DBG(("_shttpd_stat: rc=%d, path=%s", rc, path));
+
+    if (rc == 0) {
         return (0);
     }
 
@@ -588,7 +592,7 @@ static void decide_what_to_do(struct conn *c)
     struct vec  alias_uri, alias_path;
     struct stat st;
     int     rc;
-    struct registered_uri_t   *ruri;
+    struct registered_uri   *ruri;
 
     DBG(("decide_what_to_do: [%s]", c->uri));
 
@@ -1288,7 +1292,7 @@ static int multiplex_worker_sockets(const struct worker *worker, int *max_fd, fd
 }
 
 
-int shttpd_join(struct shttpd_ctx_t *ctx, fd_set *read_set, fd_set *write_set, int *max_fd)
+int shttpd_join(shttpd_ctx ctx, fd_set *read_set, fd_set *write_set, int *max_fd)
 {
     struct llhead   *lp;
     struct listener *l;
@@ -1352,7 +1356,7 @@ static void process_worker_sockets(struct worker *worker, fd_set *read_set)
 /*
  * One iteration of server loop. This is the core of the data exchange.
  */
-void shttpd_poll(struct shttpd_ctx_t *ctx, int milliseconds)
+void shttpd_poll(shttpd_ctx ctx, int milliseconds)
 {
     struct llhead   *lp;
     struct listener *l;
@@ -1398,7 +1402,7 @@ void shttpd_poll(struct shttpd_ctx_t *ctx, int milliseconds)
 /*
  * Deallocate shttpd object, free up the resources
  */
-void shttpd_fini(struct shttpd_ctx_t *ctx)
+void shttpd_fini(shttpd_ctx ctx)
 {
     size_t  i;
 
@@ -1741,7 +1745,7 @@ static int set_workers(struct shttpd_ctx_t *ctx, const char *value)
 
 
 /* shttpd [options] */
-static const struct opt {
+static const struct shopt {
     int          index;              /* Index in shttpd_ctx_t */
     const char * name;               /* Option name in config file */
     const char * description;        /* Description */
@@ -1787,7 +1791,7 @@ static const struct opt {
 };
 
 
-static const struct opt * find_opt(const char *opt_name)
+static const struct shopt * find_opt(const char *opt_name)
 {
     int i;
 
@@ -1804,9 +1808,9 @@ static const struct opt * find_opt(const char *opt_name)
 }
 
 
-int shttpd_set_option(struct shttpd_ctx_t *ctx, const char *opt_name, const char *val)
+int shttpd_set_option(shttpd_ctx ctx, const char *opt_name, const char *val)
 {
-    const struct opt *o = find_opt(opt_name);
+    const struct shopt *o = find_opt(opt_name);
     int         retval = TRUE;
 
     /* Call option setter first, so it can use both new and old values */
@@ -1834,7 +1838,7 @@ static void show_cfg_page(shttpd_arg arg)
 {
     shttpd_ctx ctx = arg->user_data;
     char       opt_name[20], value[BUFSIZ];
-    const struct opt    *o;
+    const struct shopt    *o;
 
     opt_name[0] = value[0] = '\0';
 
@@ -1879,7 +1883,7 @@ static void show_cfg_page(shttpd_arg arg)
  */
 void _shttpd_usage(const char *prog)
 {
-    const struct opt    *o;
+    const struct shopt    *o;
 
     (void) fprintf(stderr, "SHTTPD version %s (c) Sergey Lyubka\n"
         "usage: %s [options] [config_file]\n", VERSION, prog);
@@ -1902,7 +1906,7 @@ void _shttpd_usage(const char *prog)
 
 static void set_opt(struct shttpd_ctx_t *ctx, const char *opt, const char *value)
 {
-    const struct opt    *o;
+    const struct shopt    *o;
 
     o = find_opt(opt);
 
@@ -1977,11 +1981,11 @@ static void process_command_line_arguments(struct shttpd_ctx_t *ctx, char *argv[
 }
 
 
-struct shttpd_ctx_t * shttpd_init(int argc, char *argv[])
+shttpd_ctx shttpd_init(int argc, char *argv[])
 {
-    struct shttpd_ctx_t   *ctx;
+    struct shttpd_ctx_t *ctx;
     struct tm           *tm;
-    const struct opt    *o;
+    const struct shopt  *o;
 
     if ((ctx = calloc(1, sizeof(*ctx))) == NULL) {
         _shttpd_elog(E_FATAL, NULL, "cannot allocate shttpd context");

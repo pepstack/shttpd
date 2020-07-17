@@ -10,12 +10,12 @@
 
 #include "defs.h"
 
-static SERVICE_STATUS       ss; 
+static SERVICE_STATUS           ss; 
 static SERVICE_STATUS_HANDLE    hStatus; 
-static SERVICE_DESCRIPTION  service_descr = {"Web server"};
+static SERVICE_DESCRIPTION      service_descr = {"Web server"};
 
-static void
-fix_directory_separators(char *path)
+
+static void fix_directory_separators(char *path)
 {
     for (; *path != '\0'; path++) {
         if (*path == '/')
@@ -27,8 +27,8 @@ fix_directory_separators(char *path)
     }
 }
 
-static int
-protect_against_code_disclosure(const wchar_t *path)
+
+static int protect_against_code_disclosure(const wchar_t *path)
 {
     WIN32_FIND_DATAW    data;
     HANDLE          handle;
@@ -60,8 +60,8 @@ protect_against_code_disclosure(const wchar_t *path)
     return (TRUE);
 }
 
-int
-_shttpd_open(const char *path, int flags, int mode)
+
+int _shttpd_open(const char *path, int flags, int mode)
 {
     char    buf[FILENAME_MAX];
     wchar_t wbuf[FILENAME_MAX];
@@ -76,26 +76,28 @@ _shttpd_open(const char *path, int flags, int mode)
     return (_wopen(wbuf, flags));
 }
 
-int
-_shttpd_stat(const char *path, struct stat *stp)
+
+int _shttpd_stat(const char *path, struct stat *stp)
 {
-    char    buf[FILENAME_MAX], *p;
-    wchar_t wbuf[FILENAME_MAX];
+    char *p, buf[FILENAME_MAX];
+    wchar_t  wbuf[FILENAME_MAX];
 
     _shttpd_strlcpy(buf, path, sizeof(buf));
+
     fix_directory_separators(buf);
 
     p = buf + strlen(buf) - 1;
-    while (p > buf && *p == '\\' && p[-1] != ':')
+    while (p > buf && *p == '\\' && p[-1] != ':') {
         *p-- = '\0';
+    }
 
     MultiByteToWideChar(CP_UTF8, 0, buf, -1, wbuf, sizeof(wbuf));
 
     return (_wstat(wbuf, (struct _stat *) stp));
 }
 
-int
-_shttpd_remove(const char *path)
+
+int _shttpd_remove(const char *path)
 {
     char    buf[FILENAME_MAX];
     wchar_t wbuf[FILENAME_MAX];
@@ -108,8 +110,8 @@ _shttpd_remove(const char *path)
     return (_wremove(wbuf));
 }
 
-int
-_shttpd_rename(const char *path1, const char *path2)
+
+int _shttpd_rename(const char *path1, const char *path2)
 {
     char    buf1[FILENAME_MAX];
     char    buf2[FILENAME_MAX];
@@ -127,8 +129,8 @@ _shttpd_rename(const char *path1, const char *path2)
     return (_wrename(wbuf1, wbuf2));
 }
 
-int
-_shttpd_mkdir(const char *path, int mode)
+
+int _shttpd_mkdir(const char *path, int mode)
 {
     char    buf[FILENAME_MAX];
     wchar_t wbuf[FILENAME_MAX];
@@ -141,8 +143,8 @@ _shttpd_mkdir(const char *path, int mode)
     return (_wmkdir(wbuf));
 }
 
-static char *
-wide_to_utf8(const wchar_t *str)
+
+static char * wide_to_utf8(const wchar_t *str)
 {
     char *buf = NULL;
     if (str) {
@@ -163,8 +165,8 @@ wide_to_utf8(const wchar_t *str)
     return buf;
 }
 
-char *
-_shttpd_getcwd(char *buffer, int maxlen)
+
+char * _shttpd_getcwd(char *buffer, int maxlen)
 {
     char *result = NULL;
     wchar_t *wbuffer, *wresult;
@@ -198,8 +200,8 @@ _shttpd_getcwd(char *buffer, int maxlen)
     return result;
 }
 
-DIR *
-opendir(const char *name)
+
+DIR * opendir(const char *name)
 {
     DIR     *dir = NULL;
     char        path[FILENAME_MAX];
@@ -226,8 +228,8 @@ opendir(const char *name)
     return (dir);
 }
 
-int
-closedir(DIR *dir)
+
+int closedir(DIR *dir)
 {
     int result = -1;
 
@@ -244,8 +246,8 @@ closedir(DIR *dir)
     return (result);
 }
 
-struct dirent *
-readdir(DIR *dir)
+
+struct dirent * readdir(DIR *dir)
 {
     struct dirent *result = 0;
 
@@ -265,21 +267,22 @@ readdir(DIR *dir)
     return (result);
 }
 
-int
-_shttpd_set_non_blocking_mode(int fd)
+
+int _shttpd_set_non_blocking_mode(int fd)
 {
     unsigned long   on = 1;
 
     return (ioctlsocket(fd, FIONBIO, &on));
 }
 
-void
-_shttpd_set_close_on_exec(int fd)
+
+void _shttpd_set_close_on_exec(int fd)
 {
     fd = 0; /* Do nothing. There is no FD_CLOEXEC on Windows */
 }
 
 #if !defined(NO_CGI)
+
 
 struct threadparam {
     SOCKET  s;
@@ -290,11 +293,11 @@ struct threadparam {
 
 enum ready_mode_t {IS_READY_FOR_READ, IS_READY_FOR_WRITE};
 
+
 /*
  * Wait until given socket is in ready state. Always return TRUE.
  */
-static int
-is_socket_ready(int sock, enum ready_mode_t mode)
+static int is_socket_ready(int sock, enum ready_mode_t mode)
 {
     fd_set      read_set, write_set;
 
@@ -311,12 +314,12 @@ is_socket_ready(int sock, enum ready_mode_t mode)
     return (TRUE);
 }
 
+
 /*
  * Thread function that reads POST data from the socket pair
  * and writes it to the CGI process.
  */
-static void//DWORD WINAPI
-stdoutput(void *arg)
+static void stdoutput(void *arg)
 {
     struct threadparam  *tp = arg;
     int         n, sent, stop = 0;
@@ -343,11 +346,11 @@ stdoutput(void *arg)
     free(tp);
 }
 
+
 /*
  * Thread function that reads CGI output and pushes it to the socket pair.
  */
-static void
-stdinput(void *arg)
+static void stdinput(void *arg)
 {
     struct threadparam  *tp = arg;
     static          int ntotal;
@@ -389,8 +392,8 @@ stdinput(void *arg)
     _endthread();
 }
 
-static void
-spawn_stdio_thread(int sock, HANDLE hPipe, void (*func)(void *),
+
+static void spawn_stdio_thread(int sock, HANDLE hPipe, void (*func)(void *),
         big_int_t content_len)
 {
     struct threadparam  *tp;
@@ -404,9 +407,8 @@ spawn_stdio_thread(int sock, HANDLE hPipe, void (*func)(void *),
     _beginthread(func, 0, tp);
 }
 
-int
-_shttpd_spawn_process(struct conn *c, const char *prog, char *envblk,
-        char *envp[], int sock, const char *dir)
+
+int _shttpd_spawn_process(struct conn *c, const char *prog, char *envblk, char *envp[], int sock, const char *dir)
 {
     HANDLE  a[2], b[2], h[2], me;
     DWORD   flags;
@@ -489,8 +491,8 @@ _shttpd_spawn_process(struct conn *c, const char *prog, char *envblk,
 #define ID_QUIT     101
 static NOTIFYICONDATA   ni;
 
-static LRESULT CALLBACK
-WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
+
+static LRESULT CALLBACK WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
     POINT   pt;
     HMENU   hMenu;   
@@ -521,8 +523,8 @@ WindowProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return (DefWindowProc(hWnd, msg, wParam, lParam));
 }
 
-static void
-systray(void *arg)
+
+static void systray(void *arg)
 {
     WNDCLASS    cls;
     HWND        hWnd;
@@ -556,8 +558,8 @@ systray(void *arg)
     }
 }
 
-int
-_shttpd_set_systray(struct shttpd_ctx_t *ctx, const char *opt)
+
+int _shttpd_set_systray(struct shttpd_ctx_t *ctx, const char *opt)
 {
     HWND        hWnd;
     char        title[512];
@@ -576,8 +578,8 @@ _shttpd_set_systray(struct shttpd_ctx_t *ctx, const char *opt)
     return (TRUE);
 }
 
-int
-_shttpd_set_nt_service(struct shttpd_ctx_t *ctx, const char *action)
+
+int _shttpd_set_nt_service(struct shttpd_ctx_t *ctx, const char *action)
 {
     SC_HANDLE   hSCM, hService;
     char        path[FILENAME_MAX];
@@ -621,8 +623,8 @@ _shttpd_set_nt_service(struct shttpd_ctx_t *ctx, const char *action)
     return (TRUE);
 }
 
-static void WINAPI
-ControlHandler(DWORD code) 
+
+static void WINAPI ControlHandler(DWORD code) 
 { 
     if (code == SERVICE_CONTROL_STOP || code == SERVICE_CONTROL_SHUTDOWN) {
         ss.dwWin32ExitCode  = 0; 
@@ -632,8 +634,8 @@ ControlHandler(DWORD code)
     SetServiceStatus(hStatus, &ss);
 }
 
-static void WINAPI
-ServiceMain(int argc, char *argv[]) 
+
+static void WINAPI ServiceMain(int argc, char *argv[]) 
 {
     char    path[MAX_PATH], *p, *av[] = {"shttpd_service", path, NULL};
     struct shttpd_ctx_t   *ctx;
@@ -670,8 +672,8 @@ ServiceMain(int argc, char *argv[])
     SetServiceStatus(hStatus, &ss); 
 }
 
-void
-try_to_run_as_nt_service(void)
+
+void try_to_run_as_nt_service(void)
 {
     static SERVICE_TABLE_ENTRY service_table[] = {
         {SERVICE_NAME, (LPSERVICE_MAIN_FUNCTION) ServiceMain},

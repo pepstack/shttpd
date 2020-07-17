@@ -110,63 +110,63 @@ typedef void (*shttpd_callback_t)(shttpd_arg);
  * shttpd_init
  *   Initialize shttpd context
  */
-shttpd_ctx shttpd_init (int argc, char *argv[]);
+extern shttpd_ctx shttpd_init (int argc, char *argv[]);
 
 
 /**
  * shttpd_set_option
  *   Set new value for option
  */
-int shttpd_set_option (shttpd_ctx ctx, const char *optname, const char *optval);
+extern int shttpd_set_option (shttpd_ctx ctx, const char *optname, const char *optval);
 
 
 /**
  * shttpd_get_option
  *   Get value of option
  */
-const char * shttpd_get_option (shttpd_ctx ctx, shttpd_opt_t opt);
+extern const char * shttpd_get_option (shttpd_ctx ctx, shttpd_opt_t opt);
 
 
 /**
  * shttpd_fini
  *   Dealocate the context, close all connections
  */
-void shttpd_fini (shttpd_ctx ctx);
+extern void shttpd_fini (shttpd_ctx ctx);
 
 
 /**
  * shttpd_register_uri
  *   Setup the callback function for specified URL
  */
-void shttpd_register_uri (shttpd_ctx ctx, const char *uri, shttpd_callback_t callback, void *const user_data);
+extern void shttpd_register_uri (shttpd_ctx ctx, const char *uri, shttpd_callback_t callback, void *const user_data);
 
 
 /**
  * shttpd_poll
  *   Do connections processing
  */
-void shttpd_poll (shttpd_ctx ctx, int milliseconds);
+extern void shttpd_poll (shttpd_ctx ctx, int milliseconds);
 
 
 /**
  * shttpd_version
  *   return string with SHTTPD version
  */
-const char *shttpd_version (void);
+extern const char *shttpd_version (void);
 
 
 /**
  * shttpd_get_var
  *   Fetch POST/GET variable value by name. Return value len
  */
-int shttpd_get_var (const char *var, const char *buf, int buf_len, char *value, int value_len);
+extern int shttpd_get_var (const char *var, const char *buf, int buf_len, char *value, int value_len);
 
 
 /**
  * shttpd_get_header
  *   return value of the specified HTTP header
  */
-const char *shttpd_get_header (shttpd_arg arg, const char *header_name);
+extern const char *shttpd_get_header (shttpd_arg arg, const char *header_name);
 
 
 /**
@@ -177,40 +177,40 @@ const char *shttpd_get_header (shttpd_arg arg, const char *header_name);
  *      REMOTE_USER
  *      REMOTE_ADDR
  */
-const char *shttpd_get_env (shttpd_arg arg, const char *name);
+extern const char *shttpd_get_env (shttpd_arg arg, const char *name);
 
 
-void shttpd_get_http_version (shttpd_arg arg, unsigned long *major, unsigned long *minor);
+extern void shttpd_get_http_version (shttpd_arg arg, unsigned long *major, unsigned long *minor);
 
 
 /**
  * shttpd_printf
  *   helper function to output data
  */
-size_t shttpd_printf (shttpd_arg arg, const char *fmt, ...);
+extern size_t shttpd_printf (shttpd_arg arg, const char *fmt, ...);
 
 
 /**
  * shttpd_handle_error
  *   Register custom HTTP error handler
  */
-void shttpd_handle_error (shttpd_ctx ctx, int status, shttpd_callback_t func, void *const data);
+extern void shttpd_handle_error (shttpd_ctx ctx, int status, shttpd_callback_t func, void *const data);
 
 
-void shttpd_register_ssi_func (shttpd_ctx ctx, const char *name, shttpd_callback_t func, void *const user_data);
+extern void shttpd_register_ssi_func (shttpd_ctx ctx, const char *name, shttpd_callback_t func, void *const user_data);
 
 
 /**
  * shttpd_wakeup
  *   Clear SHTTPD_SUSPEND state for the connection
  */
-void shttpd_wakeup (const void *priv);
+extern void shttpd_wakeup (const void *priv);
 
 
-int shttpd_join (shttpd_ctx ctx, fd_set *, fd_set *, int *max_fd);
+extern int shttpd_join (shttpd_ctx ctx, fd_set *, fd_set *, int *max_fd);
 
 
-int shttpd_socketpair (int sp[2]);
+extern int shttpd_socketpair (int sp[2]);
 
 #ifdef __cplusplus
 }

@@ -10,26 +10,26 @@
 
 #include "defs.h"
 
-static int
-read_socket(struct stream *stream, void *buf, size_t len)
+static int read_socket(struct stream *stream, void *buf, size_t len)
 {
     assert(stream->chan.sock != -1);
     return (recv(stream->chan.sock, buf, (int)len, 0));
 }
 
-static int
-write_socket(struct stream *stream, const void *buf, size_t len)
+
+static int write_socket(struct stream *stream, const void *buf, size_t len)
 {
     assert(stream->chan.sock != -1);
     return (send(stream->chan.sock, buf, (int)len, 0));
 }
 
-static void
-close_socket(struct stream *stream)
+
+static void close_socket(struct stream *stream)
 {
     assert(stream->chan.sock != -1);
     (void) closesocket(stream->chan.sock);
 }
+
 
 const struct io_class   _shttpd_io_socket =  {
     "socket",

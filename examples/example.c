@@ -378,10 +378,9 @@ int main(int argc, char *argv[])
      */
     ctx = shttpd_init(argc, argv);
 
+    printf("app: %s\n", argv[0]);
+    printf("root: %s\n", shttpd_get_option(ctx, SHOPT_ROOT));
     printf("ports: %s\n", shttpd_get_option(ctx, SHOPT_PORTS));
-
-    printf("root: %s\n", argv[0]);
-
     printf("aliases: %s=%s\n", ALIAS_URI, ALIAS_DIR);
 
     shttpd_set_option(ctx, "aliases", ALIAS_URI "=" ALIAS_DIR);

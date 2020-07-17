@@ -50,18 +50,19 @@ static void call_user(struct conn *c, shttpd_arg arg, shttpd_callback_t func)
      * However, if cleanup is already done, we set close() method to
      * NULL, to prevent the call from disconnect().
      */
-
-    if (arg->flags & SHTTPD_END_OF_OUTPUT)
+    if (arg->flags & SHTTPD_END_OF_OUTPUT) {
         c->loc.flags &= ~FLAG_DONT_CLOSE;
-    else
+    } else {
         c->loc.flags |= FLAG_DONT_CLOSE;
+    }
 
-    if (arg->flags & SHTTPD_SUSPEND)
+    if (arg->flags & SHTTPD_SUSPEND) {
         c->loc.flags |= FLAG_SUSPEND;
+    }
 }
 
-static int
-do_embedded(struct stream *stream, void *buf, size_t len)
+
+static int do_embedded(struct stream *stream, void *buf, size_t len)
 {
     struct shttpd_arg_t arg;
     buf = NULL; len = 0;        /* Squash warnings */
@@ -170,11 +171,10 @@ void shttpd_get_http_version(shttpd_arg arg, unsigned long *major, unsigned long
     *minor = c->minor_version;
 }
 
-void
-shttpd_register_uri(struct shttpd_ctx_t *ctx,
-        const char *uri, shttpd_callback_t callback, void *data)
+
+void shttpd_register_uri(shttpd_ctx ctx, const char *uri, shttpd_callback_t callback, void *data)
 {
-    struct registered_uri_t   *e;
+    struct registered_uri   *e;
 
     if ((e = malloc(sizeof(*e))) != NULL) {
         e->uri          = _shttpd_strdup(uri);
@@ -184,9 +184,8 @@ shttpd_register_uri(struct shttpd_ctx_t *ctx,
     }
 }
 
-int
-shttpd_get_var(const char *var, const char *buf, int buf_len,
-        char *value, int value_len)
+
+int shttpd_get_var(const char *var, const char *buf, int buf_len, char *value, int value_len)
 {
     const char  *p, *e, *s;
     size_t      var_len;
@@ -212,8 +211,8 @@ shttpd_get_var(const char *var, const char *buf, int buf_len,
     return (-1);
 }
 
-static int
-match_regexp(const char *regexp, const char *text)
+
+static int match_regexp(const char *regexp, const char *text)
 {
     if (*regexp == '\0')
         return (*text == '\0');
@@ -230,13 +229,14 @@ match_regexp(const char *regexp, const char *text)
     return (0);
 }
 
-struct registered_uri_t * _shttpd_is_registered_uri(struct shttpd_ctx_t *ctx, const char *uri)
+
+struct registered_uri * _shttpd_is_registered_uri(struct shttpd_ctx_t *ctx, const char *uri)
 {
     struct llhead       *lp;
-    struct registered_uri_t   *reg_uri;
+    struct registered_uri   *reg_uri;
 
     LL_FOREACH(&ctx->registered_uris, lp) {
-        reg_uri = LL_ENTRY(lp, struct registered_uri_t, link);
+        reg_uri = LL_ENTRY(lp, struct registered_uri, link);
         if (match_regexp(reg_uri->uri, uri))
             return (reg_uri);
     }
@@ -255,7 +255,7 @@ void _shttpd_setup_embedded_stream(struct conn *c, union variant func, void *dat
 }
 
 
-void shttpd_handle_error(struct shttpd_ctx_t *ctx, int code, shttpd_callback_t func, void *data)
+void shttpd_handle_error(shttpd_ctx ctx, int code, shttpd_callback_t func, void *data)
 {
     struct error_handler    *e;
 
@@ -284,7 +284,7 @@ void shttpd_wakeup(const void *priv)
 }
 
 
-const struct io_class   _shttpd_io_embedded =  {
+const struct io_class _shttpd_io_embedded = {
     "embedded",
     do_embedded,
     (int (*)(struct stream *, const void *, size_t)) do_embedded,
