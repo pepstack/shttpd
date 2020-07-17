@@ -76,7 +76,7 @@ _shttpd_spawn_process(struct conn *c, const char *prog, char *envblk,
 {
     int     ret;
     pid_t       pid;
-    const char  *p, *interp = c->ctx->options[OPT_CGI_INTERPRETER];
+    const char  *p, *interp = c->ctx->options[SHOPT_CGI_INTERP];
 
     envblk = NULL;  /* unused */
 

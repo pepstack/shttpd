@@ -10,14 +10,13 @@
 
 #include "defs.h"
 
-const char *
-shttpd_version(void)
+const char * shttpd_version(void)
 {
     return (VERSION);
 }
 
-static void
-call_user(struct conn *c, struct shttpd_arg *arg, shttpd_callback_t func)
+
+static void call_user(struct conn *c, shttpd_arg arg, shttpd_callback_t func)
 {
     arg->priv       = c;
     arg->state      = c->loc.chan.emb.state;
@@ -64,7 +63,7 @@ call_user(struct conn *c, struct shttpd_arg *arg, shttpd_callback_t func)
 static int
 do_embedded(struct stream *stream, void *buf, size_t len)
 {
-    struct shttpd_arg   arg;
+    struct shttpd_arg_t arg;
     buf = NULL; len = 0;        /* Squash warnings */
 
     arg.user_data   = stream->conn->loc.chan.emb.data;
@@ -76,11 +75,11 @@ do_embedded(struct stream *stream, void *buf, size_t len)
     return (0);
 }
 
-static void
-close_embedded(struct stream *stream)
+
+static void close_embedded(struct stream *stream)
 {
-    struct shttpd_arg   arg;
-    struct conn     *c = stream->conn;
+    struct shttpd_arg_t arg;
+    struct conn *c = stream->conn;
 
     arg.flags   = SHTTPD_CONNECTION_ERROR;
     arg.user_data   = c->loc.chan.emb.data;
@@ -94,8 +93,8 @@ close_embedded(struct stream *stream)
             c->loc.chan.emb.func.v_func);
 }
 
-size_t
-shttpd_printf(struct shttpd_arg *arg, const char *fmt, ...)
+
+size_t shttpd_printf(shttpd_arg arg, const char *fmt, ...)
 {
     char        *buf = arg->out.buf + arg->out.num_bytes;
     int     buflen = arg->out.len - arg->out.num_bytes, len = 0;
@@ -114,8 +113,8 @@ shttpd_printf(struct shttpd_arg *arg, const char *fmt, ...)
     return (len);
 }
 
-const char *
-shttpd_get_header(struct shttpd_arg *arg, const char *header_name)
+
+const char * shttpd_get_header(shttpd_arg arg, const char *header_name)
 {
     struct conn *c = arg->priv;
     char        *p, *s, *e;
@@ -137,8 +136,8 @@ shttpd_get_header(struct shttpd_arg *arg, const char *header_name)
     return (NULL);
 }
 
-const char *
-shttpd_get_env(struct shttpd_arg *arg, const char *env_name)
+
+const char * shttpd_get_env(shttpd_arg arg, const char *env_name)
 {
     struct conn *c = arg->priv;
     struct vec  *vec;
@@ -162,9 +161,8 @@ shttpd_get_env(struct shttpd_arg *arg, const char *env_name)
     return (NULL);
 }
 
-void
-shttpd_get_http_version(struct shttpd_arg *arg,
-        unsigned long *major, unsigned long *minor)
+
+void shttpd_get_http_version(shttpd_arg arg, unsigned long *major, unsigned long *minor)
 {
     struct conn *c = arg->priv;
     
@@ -173,10 +171,10 @@ shttpd_get_http_version(struct shttpd_arg *arg,
 }
 
 void
-shttpd_register_uri(struct shttpd_ctx *ctx,
+shttpd_register_uri(struct shttpd_ctx_t *ctx,
         const char *uri, shttpd_callback_t callback, void *data)
 {
-    struct registered_uri   *e;
+    struct registered_uri_t   *e;
 
     if ((e = malloc(sizeof(*e))) != NULL) {
         e->uri          = _shttpd_strdup(uri);
@@ -232,14 +230,13 @@ match_regexp(const char *regexp, const char *text)
     return (0);
 }
 
-struct registered_uri *
-_shttpd_is_registered_uri(struct shttpd_ctx *ctx, const char *uri)
+struct registered_uri_t * _shttpd_is_registered_uri(struct shttpd_ctx_t *ctx, const char *uri)
 {
     struct llhead       *lp;
-    struct registered_uri   *reg_uri;
+    struct registered_uri_t   *reg_uri;
 
     LL_FOREACH(&ctx->registered_uris, lp) {
-        reg_uri = LL_ENTRY(lp, struct registered_uri, link);
+        reg_uri = LL_ENTRY(lp, struct registered_uri_t, link);
         if (match_regexp(reg_uri->uri, uri))
             return (reg_uri);
     }
@@ -247,8 +244,8 @@ _shttpd_is_registered_uri(struct shttpd_ctx *ctx, const char *uri)
     return (NULL);
 }
 
-void
-_shttpd_setup_embedded_stream(struct conn *c, union variant func, void *data)
+
+void _shttpd_setup_embedded_stream(struct conn *c, union variant func, void *data)
 {
     c->loc.chan.emb.state = NULL;
     c->loc.chan.emb.func = func;
@@ -257,9 +254,8 @@ _shttpd_setup_embedded_stream(struct conn *c, union variant func, void *data)
     c->loc.flags |= FLAG_R | FLAG_W |FLAG_ALWAYS_READY;
 }
 
-void
-shttpd_handle_error(struct shttpd_ctx *ctx, int code,
-        shttpd_callback_t func, void *data)
+
+void shttpd_handle_error(struct shttpd_ctx_t *ctx, int code, shttpd_callback_t func, void *data)
 {
     struct error_handler    *e;
 
@@ -271,8 +267,8 @@ shttpd_handle_error(struct shttpd_ctx *ctx, int code,
     }
 }
 
-void
-shttpd_wakeup(const void *priv)
+
+void shttpd_wakeup(const void *priv)
 {
     const struct conn   *conn = priv;
     char            buf[sizeof(int) + sizeof(void *)];
@@ -286,6 +282,7 @@ shttpd_wakeup(const void *priv)
 
     (void) send(conn->worker->ctl[1], buf, sizeof(buf), 0);
 }
+
 
 const struct io_class   _shttpd_io_embedded =  {
     "embedded",

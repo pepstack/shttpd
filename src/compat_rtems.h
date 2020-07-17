@@ -40,7 +40,7 @@
 extern "C" {
 #endif
 
-typedef void (*rtems_shttpd_addpages)(struct shttpd_ctx *ctx);
+typedef void (*rtems_shttpd_addpages)(struct shttpd_ctx_t *ctx);
 typedef void (*rtems_shttpd_init)(void);
 
 rtems_status_code rtems_initialize_webserver(rtems_task_priority   initial_priority,

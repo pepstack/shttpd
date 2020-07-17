@@ -435,7 +435,7 @@ _shttpd_spawn_process(struct conn *c, const char *prog, char *envblk,
     si.hStdInput    = h[0];
 
     /* If CGI file is a script, try to read the interpreter line */
-    interp = c->ctx->options[OPT_CGI_INTERPRETER];
+    interp = c->ctx->options[SHOPT_CGI_INTERP];
     if (interp == NULL) {
         if ((fp = fopen(prog, "r")) != NULL) {
             (void) fgets(line, sizeof(line), fp);
@@ -557,7 +557,7 @@ systray(void *arg)
 }
 
 int
-_shttpd_set_systray(struct shttpd_ctx *ctx, const char *opt)
+_shttpd_set_systray(struct shttpd_ctx_t *ctx, const char *opt)
 {
     HWND        hWnd;
     char        title[512];
@@ -577,7 +577,7 @@ _shttpd_set_systray(struct shttpd_ctx *ctx, const char *opt)
 }
 
 int
-_shttpd_set_nt_service(struct shttpd_ctx *ctx, const char *action)
+_shttpd_set_nt_service(struct shttpd_ctx_t *ctx, const char *action)
 {
     SC_HANDLE   hSCM, hService;
     char        path[FILENAME_MAX];
@@ -636,7 +636,7 @@ static void WINAPI
 ServiceMain(int argc, char *argv[]) 
 {
     char    path[MAX_PATH], *p, *av[] = {"shttpd_service", path, NULL};
-    struct shttpd_ctx   *ctx;
+    struct shttpd_ctx_t   *ctx;
 
     ss.dwServiceType      = SERVICE_WIN32; 
     ss.dwCurrentState     = SERVICE_RUNNING; 

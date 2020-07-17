@@ -35,7 +35,7 @@ signal_handler(int sig_num)
 int
 main(int argc, char *argv[])
 {
-    struct shttpd_ctx   *ctx;
+    struct shttpd_ctx_t   *ctx;
 
 #if !defined(NO_AUTH)
     if (argc > 1 && argv[1][0] == '-' && argv[1][1] == 'A') {
@@ -66,7 +66,7 @@ main(int argc, char *argv[])
         _shttpd_elog(E_FATAL, NULL, "%s", "Cannot initialize SHTTPD context");
     }
 
-    _shttpd_elog(E_LOG, NULL, "shttpd %s started on port(s) %s, serving %s", VERSION, ctx->options[OPT_PORTS], ctx->options[OPT_ROOT]);
+    _shttpd_elog(E_LOG, NULL, "shttpd %s started on port(s) %s, serving %s", VERSION, ctx->options[SHOPT_PORTS], ctx->options[SHOPT_ROOT]);
 
     while (exit_flag == 0) {
         shttpd_poll(ctx, 10 * 1000);

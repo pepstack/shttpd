@@ -22,7 +22,7 @@ _shttpd_elog(int flags, struct conn *c, const char *fmt, ...)
     va_list ap;
 
     /* Print to stderr */
-    if (c == NULL || !IS_TRUE(c->ctx, OPT_INETD)) {
+    if (c == NULL || !IS_TRUE(c->ctx, SHOPT_INETD)) {
         va_start(ap, fmt);
         (void) vfprintf(stderr, fmt, ap);
         (void) fputc('\n', stderr);

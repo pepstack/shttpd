@@ -93,7 +93,7 @@ prepare_environment(const struct conn *c, const char *prog,
         struct env_block *blk)
 {
     const struct headers    *h = &c->ch;
-    const char      *s, *fname, *root = c->ctx->options[OPT_ROOT];
+    const char      *s, *fname, *root = c->ctx->options[SHOPT_ROOT];
     size_t          len;
 
     blk->len = blk->nvars = 0;
@@ -108,7 +108,7 @@ prepare_environment(const struct conn *c, const char *prog,
     addenv(blk, "%s", "SERVER_PROTOCOL=HTTP/1.1");
     addenv(blk, "%s", "REDIRECT_STATUS=200");   /* PHP */
     addenv(blk, "SERVER_PORT=%d", c->loc_port);
-    addenv(blk, "SERVER_NAME=%s", c->ctx->options[OPT_AUTH_REALM]);
+    addenv(blk, "SERVER_NAME=%s", c->ctx->options[SHOPT_AUTH_REALM]);
     addenv(blk, "SERVER_ROOT=%s", root);
     addenv(blk, "DOCUMENT_ROOT=%s", root);
     addenv(blk, "REQUEST_METHOD=%s",
@@ -156,7 +156,7 @@ prepare_environment(const struct conn *c, const char *prog,
     }
 
     /* Add user-specified variables */
-    s = c->ctx->options[OPT_CGI_ENVIRONMENT];
+    s = c->ctx->options[SHOPT_CGI_ENV];
     FOR_EACH_WORD_IN_LIST(s, len)
         addenv(blk, "%.*s", len, s);
 

@@ -172,17 +172,17 @@ check_password(int method, const struct vec *ha1, const struct digest *digest)
 }
 
 static FILE *
-open_auth_file(struct shttpd_ctx *ctx, const char *path)
+open_auth_file(struct shttpd_ctx_t *ctx, const char *path)
 {
     char        name[FILENAME_MAX];
     const char  *p, *e;
     FILE        *fp = NULL;
     int     fd;
 
-    if (ctx->options[OPT_AUTH_GPASSWD] != NULL) {
+    if (ctx->options[SHOPT_AUTH_GPASSWD] != NULL) {
         /* Use global passwords file */
         _shttpd_snprintf(name, sizeof(name), "%s",
-            ctx->options[OPT_AUTH_GPASSWD]);
+            ctx->options[SHOPT_AUTH_GPASSWD]);
     } else {
         /*
          * Try to find .htpasswd in requested directory.
@@ -269,7 +269,7 @@ authorize(struct conn *c, FILE *fp)
                 domain.len, domain.ptr, ha1.len, ha1.ptr));
 
             if (vcmp(user_vec, &user) &&
-                !memcmp(c->ctx->options[OPT_AUTH_REALM],
+                !memcmp(c->ctx->options[SHOPT_AUTH_REALM],
                 domain.ptr, domain.len)) {
                 ok = check_password(c->method, &ha1, &digest);
                 break;
@@ -285,7 +285,7 @@ _shttpd_check_authorization(struct conn *c, const char *path)
 {
     FILE        *fp = NULL;
     int     len, n, authorized = 1;
-    const char  *p, *s = c->ctx->options[OPT_PROTECT];
+    const char  *p, *s = c->ctx->options[SHOPT_PROTECT];
     char        protected_path[FILENAME_MAX];
 
     FOR_EACH_WORD_IN_LIST(s, len) {
@@ -328,7 +328,7 @@ _shttpd_is_authorized_for_put(struct conn *c)
     FILE    *fp;
     int ret = 0;
 
-    if ((fp = fopen(c->ctx->options[OPT_AUTH_PUT], "r")) != NULL) {
+    if ((fp = fopen(c->ctx->options[SHOPT_AUTH_PUT], "r")) != NULL) {
         ret = authorize(c, fp);
         (void) fclose(fp);
     }
@@ -343,7 +343,7 @@ _shttpd_send_authorization_request(struct conn *c)
 
     (void) _shttpd_snprintf(buf, sizeof(buf), "Unauthorized\r\n"
         "WWW-Authenticate: Digest qop=\"auth\", realm=\"%s\", "
-        "nonce=\"%lu\"", c->ctx->options[OPT_AUTH_REALM],
+        "nonce=\"%lu\"", c->ctx->options[SHOPT_AUTH_REALM],
         (unsigned long) _shttpd_current_time);
 
     _shttpd_send_server_error(c, 401, buf);

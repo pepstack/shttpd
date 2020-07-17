@@ -14,10 +14,12 @@
 #include "defs.h"
 
 time_t  _shttpd_current_time;   /* Current UTC time */
+
 int _shttpd_tz_offset;          /* Time zone offset from UTC */
 int _shttpd_exit_flag;          /* Program exit flag */
 
-#define OPT_INVALID   (-1)
+
+#define SHOPT_INVALID   (-1)
 
 #define check_mem_free(p) if((p) != NULL) free(p)
 
@@ -55,7 +57,7 @@ static const struct http_header http_headers[] = {
 };
 
 
-struct shttpd_ctx *init_ctx (const char *config_file, int argc, char *argv[]);
+struct shttpd_ctx_t *init_ctx (const char *config_file, int argc, char *argv[]);
 
 
 static void process_connection (struct conn *, int, int);
@@ -107,7 +109,7 @@ static void error_handler_destructor(struct llhead *lp)
 
 static void registered_uri_destructor(struct llhead *lp)
 {
-    struct registered_uri *ruri = LL_ENTRY(lp, struct registered_uri, link);
+    struct registered_uri_t *ruri = LL_ENTRY(lp, struct registered_uri_t, link);
 
     free((void *) ruri->uri);
     free(ruri);
@@ -151,9 +153,9 @@ int _shttpd_url_decode(const char *src, int src_len, char *dst, int dst_len)
 }
 
 
-static const char * is_alias(struct shttpd_ctx *ctx, const char *uri, struct vec *a_uri, struct vec *a_path)
+static const char * is_alias(struct shttpd_ctx_t *ctx, const char *uri, struct vec *a_uri, struct vec *a_path)
 {
-    const char  *p, *s = ctx->options[OPT_ALIASES];
+    const char  *p, *s = ctx->options[SHOPT_ALIASES];
     size_t      len;
 
     DBG(("is_alias: aliases [%s]", s == NULL ? "" : s));
@@ -485,9 +487,9 @@ static const struct {
 };
 
 
-void _shttpd_get_mime_type(struct shttpd_ctx *ctx, const char *uri, int len, struct vec *vec)
+void _shttpd_get_mime_type(struct shttpd_ctx_t *ctx, const char *uri, int len, struct vec *vec)
 {
-    const char  *eq, *p = ctx->options[OPT_MIME_TYPES];
+    const char  *eq, *p = ctx->options[SHOPT_MIME_TYPES];
     int     i, n, ext_len;
 
     /* Firt, loop through the custom mime types if any */
@@ -529,7 +531,7 @@ void _shttpd_get_mime_type(struct shttpd_ctx *ctx, const char *uri, int len, str
 static int find_index_file(struct conn *c, char *path, size_t maxpath, struct stat *stp)
 {
     char        buf[FILENAME_MAX];
-    const char  *s = c->ctx->options[OPT_INDEX_FILES];
+    const char  *s = c->ctx->options[SHOPT_INDEX_FILES];
     size_t      len;
 
     FOR_EACH_WORD_IN_LIST(s, len) {
@@ -561,7 +563,7 @@ static int get_path_info(struct conn *c, char *path, struct stat *stp)
     }
 
     p = path + strlen(path);
-    e = path + strlen(c->ctx->options[OPT_ROOT]) + 2;
+    e = path + strlen(c->ctx->options[SHOPT_ROOT]) + 2;
 
     /* Strip directory parts of the path one by one */
     for (; p > e; p--) {
@@ -586,7 +588,7 @@ static void decide_what_to_do(struct conn *c)
     struct vec  alias_uri, alias_path;
     struct stat st;
     int     rc;
-    struct registered_uri   *ruri;
+    struct registered_uri_t   *ruri;
 
     DBG(("decide_what_to_do: [%s]", c->uri));
 
@@ -598,7 +600,7 @@ static void decide_what_to_do(struct conn *c)
 
     remove_double_dots(c->uri);
     
-    root = c->ctx->options[OPT_ROOT];
+    root = c->ctx->options[SHOPT_ROOT];
 
     if (strlen(c->uri) + strlen(root) >= sizeof(path)) {
         _shttpd_send_server_error(c, 400, "URI is too long");
@@ -627,7 +629,7 @@ static void decide_what_to_do(struct conn *c)
         _shttpd_send_server_error(c, 403, "Forbidden");
     } else
 #if !defined(NO_AUTH)
-    if ((c->method == METHOD_PUT || c->method == METHOD_DELETE) && (c->ctx->options[OPT_AUTH_PUT] == NULL ||
+    if ((c->method == METHOD_PUT || c->method == METHOD_DELETE) && (c->ctx->options[SHOPT_AUTH_PUT] == NULL ||
         !_shttpd_is_authorized_for_put(c))) {
         _shttpd_send_authorization_request(c);
     } else
@@ -664,18 +666,18 @@ static void decide_what_to_do(struct conn *c)
         (void) _shttpd_snprintf(buf, sizeof(buf), "Moved Permanently\r\nLocation: %s/", c->uri);
         _shttpd_send_server_error(c, 301, buf);
     } else if (S_ISDIR(st.st_mode) && find_index_file(c, path, sizeof(path) - 1, &st) == -1 &&
-        !IS_TRUE(c->ctx, OPT_DIR_LIST)) {
+        !IS_TRUE(c->ctx, SHOPT_DIR_LIST)) {
         _shttpd_send_server_error(c, 403, "Directory Listing Denied");
-    } else if (S_ISDIR(st.st_mode) && IS_TRUE(c->ctx, OPT_DIR_LIST)) {
+    } else if (S_ISDIR(st.st_mode) && IS_TRUE(c->ctx, SHOPT_DIR_LIST)) {
         if ((c->loc.chan.dir.path = _shttpd_strdup(path)) != NULL) {
             _shttpd_get_dir(c);
         } else {
             _shttpd_send_server_error(c, 500, "GET Directory Error");
         }
-    } else if (S_ISDIR(st.st_mode) && !IS_TRUE(c->ctx, OPT_DIR_LIST)) {
+    } else if (S_ISDIR(st.st_mode) && !IS_TRUE(c->ctx, SHOPT_DIR_LIST)) {
         _shttpd_send_server_error(c, 403, "Directory listing denied");
 #if !defined(NO_CGI)
-    } else if (_shttpd_match_extension(path, c->ctx->options[OPT_CGI_EXTENSIONS])) {
+    } else if (_shttpd_match_extension(path, c->ctx->options[SHOPT_CGI_EXTS])) {
         if (c->method != METHOD_POST && c->method != METHOD_GET) {
             _shttpd_send_server_error(c, 501, "Bad method ");
         } else if ((_shttpd_run_cgi(c, path)) == -1) {
@@ -685,7 +687,7 @@ static void decide_what_to_do(struct conn *c)
         }
 #endif /* NO_CGI */
 #if !defined(NO_SSI)
-    } else if (_shttpd_match_extension(path, c->ctx->options[OPT_SSI_EXTENSIONS])) {
+    } else if (_shttpd_match_extension(path, c->ctx->options[SHOPT_SSI_EXTS])) {
         if ((c->loc.chan.fd = _shttpd_open(path, O_RDONLY | O_BINARY, 0644)) == -1) {
             _shttpd_send_server_error(c, 500, "SSI open error");
         } else {
@@ -813,10 +815,10 @@ static void parse_http_request(struct conn *c)
 
 static void add_socket(struct worker *worker, int sock, int is_ssl)
 {
-    struct shttpd_ctx   *ctx = worker->ctx;
+    struct shttpd_ctx_t   *ctx = worker->ctx;
     struct conn     *c;
     struct usa      sa;
-    int    l = IS_TRUE(ctx, OPT_INETD) ? E_FATAL : E_LOG;
+    int    l = IS_TRUE(ctx, SHOPT_INETD) ? E_FATAL : E_LOG;
 
 #if !defined(NO_SSL)
     SSL     *ssl = NULL;
@@ -888,13 +890,13 @@ static void add_socket(struct worker *worker, int sock, int is_ssl)
 }
 
 
-static struct worker * first_worker(struct shttpd_ctx *ctx)
+static struct worker * first_worker(struct shttpd_ctx_t *ctx)
 {
     return (LL_ENTRY(ctx->workers.next, struct worker, link));
 }
 
 
-static void pass_socket(struct shttpd_ctx *ctx, int sock, int is_ssl)
+static void pass_socket(struct shttpd_ctx_t *ctx, int sock, int is_ssl)
 {
     struct llhead   *lp;
     struct worker   *worker, *lazy;
@@ -918,7 +920,7 @@ static void pass_socket(struct shttpd_ctx *ctx, int sock, int is_ssl)
 }
 
 
-static int set_ports(struct shttpd_ctx *ctx, const char *p)
+static int set_ports(struct shttpd_ctx_t *ctx, const char *p)
 {
     int     sock, len, is_ssl, port;
     struct listener *l;
@@ -1047,7 +1049,7 @@ static void connection_desctructor(struct llhead *lp)
     }
 
     /* In inetd mode, exit if request is finished. */
-    if (IS_TRUE(c->ctx, OPT_INETD)) {
+    if (IS_TRUE(c->ctx, SHOPT_INETD)) {
         exit(0);
     }
 
@@ -1104,7 +1106,7 @@ static void worker_destructor(struct llhead *lp)
 }
 
 
-static int is_allowed(const struct shttpd_ctx *ctx, const struct usa *usa)
+static int is_allowed(const struct shttpd_ctx_t *ctx, const struct usa *usa)
 {
     const struct acl    *acl;
     const struct llhead *lp;
@@ -1173,14 +1175,14 @@ static void process_connection(struct conn *c, int remote_ready, int local_ready
 }
 
 
-static int num_workers(const struct shttpd_ctx *ctx)
+static int num_workers(const struct shttpd_ctx_t *ctx)
 {
-    char    *p = ctx->options[OPT_THREADS];
+    char    *p = ctx->options[SHOPT_THREADS];
     return (p ? atoi(p) : 1);
 }
 
 
-static void handle_connected_socket(struct shttpd_ctx *ctx, struct usa *sap, int sock, int is_ssl)
+static void handle_connected_socket(struct shttpd_ctx_t *ctx, struct usa *sap, int sock, int is_ssl)
 {
 #if !defined(_WIN32)
     if (sock >= (int) FD_SETSIZE) {
@@ -1286,7 +1288,7 @@ static int multiplex_worker_sockets(const struct worker *worker, int *max_fd, fd
 }
 
 
-int shttpd_join(struct shttpd_ctx *ctx, fd_set *read_set, fd_set *write_set, int *max_fd)
+int shttpd_join(struct shttpd_ctx_t *ctx, fd_set *read_set, fd_set *write_set, int *max_fd)
 {
     struct llhead   *lp;
     struct listener *l;
@@ -1350,7 +1352,7 @@ static void process_worker_sockets(struct worker *worker, fd_set *read_set)
 /*
  * One iteration of server loop. This is the core of the data exchange.
  */
-void shttpd_poll(struct shttpd_ctx *ctx, int milliseconds)
+void shttpd_poll(struct shttpd_ctx_t *ctx, int milliseconds)
 {
     struct llhead   *lp;
     struct listener *l;
@@ -1396,7 +1398,7 @@ void shttpd_poll(struct shttpd_ctx *ctx, int milliseconds)
 /*
  * Deallocate shttpd object, free up the resources
  */
-void shttpd_fini(struct shttpd_ctx *ctx)
+void shttpd_fini(struct shttpd_ctx_t *ctx)
 {
     size_t  i;
 
@@ -1487,7 +1489,7 @@ static int isbyte(int n)
 }
 
 
-static int set_inetd(struct shttpd_ctx *ctx, const char *flag)
+static int set_inetd(struct shttpd_ctx_t *ctx, const char *flag)
 {
     ctx = NULL; /* Unused */
 
@@ -1501,7 +1503,7 @@ static int set_inetd(struct shttpd_ctx *ctx, const char *flag)
 }
 
 
-static int set_uid(struct shttpd_ctx *ctx, const char *uid)
+static int set_uid(struct shttpd_ctx_t *ctx, const char *uid)
 {
     struct passwd *pw = NULL;
 
@@ -1521,7 +1523,7 @@ static int set_uid(struct shttpd_ctx *ctx, const char *uid)
 }
 
 
-static int set_acl(struct shttpd_ctx *ctx, const char *s)
+static int set_acl(struct shttpd_ctx_t *ctx, const char *s)
 {
     struct acl  *acl = NULL;
     char   flag;
@@ -1561,7 +1563,7 @@ static int set_acl(struct shttpd_ctx *ctx, const char *s)
 /*
  * Dynamically load SSL library. Set up ctx->ssl_ctx pointer.
  */
-static int set_ssl(struct shttpd_ctx *ctx, const char *pem)
+static int set_ssl(struct shttpd_ctx_t *ctx, const char *pem)
 {
     SSL_CTX     *CTX;
     void        *lib;
@@ -1619,22 +1621,22 @@ static int open_log_file(FILE **fpp, const char *path)
 }
 
 
-static int set_alog(struct shttpd_ctx *ctx, const char *path)
+static int set_alog(shttpd_ctx ctx, const char *path)
 {
     return (open_log_file(&ctx->access_log, path));
 }
 
 
-static int set_elog(struct shttpd_ctx *ctx, const char *path)
+static int set_elog(shttpd_ctx ctx, const char *path)
 {
     return (open_log_file(&ctx->error_log, path));
 }
 
 
-static void show_cfg_page(struct shttpd_arg *arg);
+static void show_cfg_page(shttpd_arg arg);
 
 
-static int set_cfg_uri(struct shttpd_ctx *ctx, const char *uri)
+static int set_cfg_uri(shttpd_ctx ctx, const char *uri)
 {
     free_list(&ctx->registered_uris, &registered_uri_destructor);
 
@@ -1646,7 +1648,7 @@ static int set_cfg_uri(struct shttpd_ctx *ctx, const char *uri)
 }
 
 
-static struct worker * add_worker(struct shttpd_ctx *ctx)
+static struct worker * add_worker(shttpd_ctx ctx)
 {
     struct worker   *worker;
 
@@ -1701,7 +1703,7 @@ static void worker_function(void *param)
 }
 
 
-static int set_workers(struct shttpd_ctx *ctx, const char *value)
+static int set_workers(struct shttpd_ctx_t *ctx, const char *value)
 {
     int    new_num, old_num;
     struct llhead   *lp, *tmp;
@@ -1740,49 +1742,48 @@ static int set_workers(struct shttpd_ctx *ctx, const char *value)
 
 /* shttpd [options] */
 static const struct opt {
-    int          index;              /* Index in shttpd_ctx */
+    int          index;              /* Index in shttpd_ctx_t */
     const char * name;               /* Option name in config file */
     const char * description;        /* Description */
     const char * default_value;      /* Default option value */
-    int (*setter)(struct shttpd_ctx *, const char *);
+    int (*setter)(struct shttpd_ctx_t *, const char *);
 } known_options[] = {
-    {OPT_ROOT,            "root",        "Web root directory",         ".",         NULL},
-    {OPT_INDEX_FILES,     "index_files", "Index files",                INDEX_FILES, NULL},
+    {SHOPT_ROOT,         "root",        "Web root directory",         ".",         NULL},
+    {SHOPT_INDEX_FILES,  "index_files", "Index files",                INDEX_FILES, NULL},
 #ifndef NO_SSL
-    {OPT_SSL_CERTIFICATE, "ssl_cert",    "SSL certificate file",       NULL,        set_ssl},
+    {SHOPT_SSL_CERT,     "ssl_cert",    "SSL certificate file",       NULL,        set_ssl},
 #endif /* NO_SSL */
-    {OPT_PORTS,           "ports",       "Listening ports",            LISTENING_PORTS, set_ports},
-    {OPT_DIR_LIST,        "dir_list",    "Directory listing",          "yes",       NULL},
-    {OPT_CFG_URI,         "cfg_uri",     "Config uri",                 NULL,        set_cfg_uri},
-    {OPT_PROTECT,         "protect",     "URI to htpasswd mapping",    NULL,        NULL},
+    {SHOPT_PORTS,        "ports",       "Listening ports",            LISTENING_PORTS, set_ports},
+    {SHOPT_DIR_LIST,     "dir_list",    "Directory listing",          "yes",       NULL},
+    {SHOPT_CFG_URI,      "cfg_uri",     "Config uri",                 NULL,        set_cfg_uri},
+    {SHOPT_PROTECT,      "protect",     "URI to htpasswd mapping",    NULL,        NULL},
 #ifndef NO_CGI
-    {OPT_CGI_EXTENSIONS,  "cgi_ext",     "CGI extensions",             CGI_EXT,     NULL},
-    {OPT_CGI_INTERPRETER, "cgi_interp",  "CGI interpreter",            NULL,        NULL},
-    {OPT_CGI_ENVIRONMENT, "cgi_env",     "Additional CGI env vars",    NULL,        NULL},
+    {SHOPT_CGI_EXTS,     "cgi_ext",     "CGI extensions",             CGI_EXT,     NULL},
+    {SHOPT_CGI_INTERP,   "cgi_interp",  "CGI interpreter",            NULL,        NULL},
+    {SHOPT_CGI_ENV,      "cgi_env",     "Additional CGI env vars",    NULL,        NULL},
 #endif /* NO_CGI */
-    {OPT_SSI_EXTENSIONS,  "ssi_ext",     "SSI extensions",             SSI_EXT,     NULL},
+    {SHOPT_SSI_EXTS,     "ssi_ext",     "SSI extensions",             SSI_EXT,     NULL},
 #ifndef NO_AUTH
-    {OPT_AUTH_REALM,      "auth_realm",  "Authentication domain name", REALM,       NULL},
-    {OPT_AUTH_GPASSWD,    "auth_gpass",  "Global passwords file",      NULL,        NULL},
-    {OPT_AUTH_PUT,        "auth_PUT",    "PUT,DELETE auth file",       NULL,        NULL},
+    {SHOPT_AUTH_REALM,   "auth_realm",  "Authentication domain name", REALM,       NULL},
+    {SHOPT_AUTH_GPASSWD, "auth_gpass",  "Global passwords file",      NULL,        NULL},
+    {SHOPT_AUTH_PUT,     "auth_PUT",    "PUT,DELETE auth file",       NULL,        NULL},
 #endif /* !NO_AUTH */
 #ifdef _WIN32
-    {OPT_SERVICE,         "service",     "Manage WinNNT service (install|uninstall)",
-                                                                            NULL,   _shttpd_set_nt_service},
-    {OPT_HIDE,            "systray",     "Show app icon on systray",        "no",   _shttpd_set_systray},
+    {SHOPT_SERVICE,      "service",     "Manage WinNNT service (install|uninstall)", NULL, _shttpd_set_nt_service},
+    {SHOPT_HIDE,         "systray",     "Show app icon on systray",                  "no", _shttpd_set_systray},
 #else
-    {OPT_INETD,           "inetd",       "Inetd mode",                      "no",   set_inetd},
-    {OPT_UID,             "uid",         "Run as user",                     NULL,   set_uid},
+    {SHOPT_INETD,        "inetd",       "Inetd mode",                      "no",   set_inetd},
+    {SHOPT_UID,          "uid",         "Run as user",                     NULL,   set_uid},
 #endif /* _WIN32 */
-    {OPT_ACCESS_LOG,      "access_log",  "Access log file",                 NULL,   set_alog},
-    {OPT_ERROR_LOG,       "error_log",   "Error log file",                  NULL,   set_elog},
-    {OPT_MIME_TYPES,      "mime_types",  "Additional mime types list",      NULL,   NULL},
-    {OPT_ALIASES,         "aliases",     "Path=URI mappings",               NULL,   NULL},
-    {OPT_ACL,             "acl",         "Allow/deny IP addresses/subnets", NULL,   set_acl},
+    {SHOPT_ACCESS_LOG,   "access_log",  "Access log file",                 NULL,   set_alog},
+    {SHOPT_ERROR_LOG,    "error_log",   "Error log file",                  NULL,   set_elog},
+    {SHOPT_MIME_TYPES,   "mime_types",  "Additional mime types list",      NULL,   NULL},
+    {SHOPT_ALIASES,      "aliases",     "Path=URI mappings",               NULL,   NULL},
+    {SHOPT_ACL,          "acl",         "Allow/deny IP addresses/subnets", NULL,   set_acl},
 #if !defined(NO_THREADS)
-    {OPT_THREADS,         "threads",     "Number of worker threads",        "1",    set_workers},
+    {SHOPT_THREADS,      "threads",     "Number of worker threads",        "1",    set_workers},
 #endif /* !NO_THREADS */
-    {OPT_INVALID, NULL, NULL, NULL, NULL}
+    {SHOPT_INVALID, NULL, NULL, NULL, NULL}
 };
 
 
@@ -1803,7 +1804,7 @@ static const struct opt * find_opt(const char *opt_name)
 }
 
 
-int shttpd_set_option(struct shttpd_ctx *ctx, const char *opt_name, const char *val)
+int shttpd_set_option(struct shttpd_ctx_t *ctx, const char *opt_name, const char *val)
 {
     const struct opt *o = find_opt(opt_name);
     int         retval = TRUE;
@@ -1823,10 +1824,16 @@ int shttpd_set_option(struct shttpd_ctx *ctx, const char *opt_name, const char *
 }
 
 
-static void show_cfg_page(struct shttpd_arg *arg)
+const char * shttpd_get_option (shttpd_ctx ctx, shttpd_opt_t opt)
 {
-    struct shttpd_ctx   *ctx = arg->user_data;
-    char            opt_name[20], value[BUFSIZ];
+    return (opt >= SHOPT_ROOT && opt < SHOPTIONS_NUM) ? ctx->options[opt] : NULL;
+}
+
+
+static void show_cfg_page(shttpd_arg arg)
+{
+    shttpd_ctx ctx = arg->user_data;
+    char       opt_name[20], value[BUFSIZ];
     const struct opt    *o;
 
     opt_name[0] = value[0] = '\0';
@@ -1893,7 +1900,7 @@ void _shttpd_usage(const char *prog)
 }
 
 
-static void set_opt(struct shttpd_ctx *ctx, const char *opt, const char *value)
+static void set_opt(struct shttpd_ctx_t *ctx, const char *opt, const char *value)
 {
     const struct opt    *o;
 
@@ -1905,7 +1912,7 @@ static void set_opt(struct shttpd_ctx *ctx, const char *opt, const char *value)
 }
 
 
-static void process_command_line_arguments(struct shttpd_ctx *ctx, char *argv[])
+static void process_command_line_arguments(struct shttpd_ctx_t *ctx, char *argv[])
 {
     const char  *config_file = CONFIG_FILE;
     char    line[BUFSIZ], opt[BUFSIZ],
@@ -1970,9 +1977,9 @@ static void process_command_line_arguments(struct shttpd_ctx *ctx, char *argv[])
 }
 
 
-struct shttpd_ctx * shttpd_init(int argc, char *argv[])
+struct shttpd_ctx_t * shttpd_init(int argc, char *argv[])
 {
-    struct shttpd_ctx   *ctx;
+    struct shttpd_ctx_t   *ctx;
     struct tm           *tm;
     const struct opt    *o;
 

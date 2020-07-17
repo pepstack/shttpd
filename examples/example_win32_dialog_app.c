@@ -15,7 +15,7 @@ DlgProc(HWND hDlg, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	static char		*argv = {"", "-ports", LISTENING_PORT, NULL};
 	int			argc = sizeof(argv) / sizeof(argv[0]) - 1;
-	static struct shttpd_ctx *ctx;
+	static struct shttpd_ctx_t *ctx;
 
 	switch (msg) {
 

@@ -35,7 +35,7 @@ static rtems_task rtems_httpd_daemon(rtems_task_argument args )
 {
   RTEMS_HTTPD_ARGS *httpd_args = (RTEMS_HTTPD_ARGS*)args;
 
-  struct shttpd_ctx       *ctx;
+  struct shttpd_ctx_t       *ctx;
 
   if (httpd_args != NULL)
     if (httpd_args->init_callback != NULL)
