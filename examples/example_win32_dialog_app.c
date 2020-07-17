@@ -7,7 +7,7 @@
  * cl example_win32_dialog_app.c dialog.res user32.lib shttpd.lib /MD
  */
 
-#define	LISTENING_PORT	"8080"
+#define	LISTENING_PORT	"8888"
 #define	ID_TIMER	22
 
 static BOOL CALLBACK

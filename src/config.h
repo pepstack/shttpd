@@ -15,7 +15,7 @@
 #define CONFIG_FILE          "shttpd.conf"       /* Configuration file       */
 #define HTPASSWD             ".htpasswd"         /* Passwords file name      */
 #define URI_MAX              16384               /* Default max request size */
-#define LISTENING_PORTS      "8080"              /* Default listening ports  */
+#define LISTENING_PORTS      "8888"              /* Default listening ports  */
 
 #define INDEX_FILES          "index.html,index.htm,index.php,index.cgi"
 

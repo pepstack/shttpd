@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
      * Attach folder c:\ to the URL /my_c  (for windows), and
      * /etc/ to URL /my_etc (for UNIX). These are Apache-like aliases.
      * Set WWW root to current directory.
-     * Start listening on ports 8080 and 8081
+     * Start listening on ports 8888 and 8889
      */
     ctx = shttpd_init(argc, argv);
 
@@ -352,7 +352,7 @@ int main(int argc, char *argv[])
 
 #ifndef NO_SSL
     shttpd_set_option(ctx, "ssl_cert", "shttpd.pem");  
-    shttpd_set_option(ctx, "ports", "8080,8081s");
+    shttpd_set_option(ctx, "ports", "8888,8889s");
 #endif
 
     /* Register an index page under two URIs */
